@@ -6,7 +6,7 @@ import MenuPage from "./pages/MenuPage";
 import BahanPage from "./pages/BahanPage";
 import RestockPage from "./pages/RestockPage";
 import RiwayatPesananPage from "./pages/RiwayatPesananPage";
-
+import StatusPesananPage from "./pages/StatusPesananPage";
 
 export default function App() {
   const [open, setOpen] = useState(false);
@@ -22,8 +22,7 @@ export default function App() {
             <Route path="/bahan" element={<BahanPage />} />
             <Route path="/restock" element={<RestockPage />} />
             <Route path="/riwayat" element={<RiwayatPesananPage />} />
-
-
+            <Route path="/status" element={<StatusPesananPage />} />
           </Routes>
         </main>
       </div>
