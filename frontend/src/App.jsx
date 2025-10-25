@@ -5,6 +5,8 @@ import Header from "./components/Header";
 import MenuPage from "./pages/MenuPage";
 import BahanPage from "./pages/BahanPage";
 import RestockPage from "./pages/RestockPage";
+import RiwayatPesananPage from "./pages/RiwayatPesananPage";
+
 
 export default function App() {
   const [open, setOpen] = useState(false);
@@ -19,6 +21,8 @@ export default function App() {
             <Route path="/" element={<MenuPage />} />
             <Route path="/bahan" element={<BahanPage />} />
             <Route path="/restock" element={<RestockPage />} />
+            <Route path="/riwayat" element={<RiwayatPesananPage />} />
+
 
           </Routes>
         </main>
