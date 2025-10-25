@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import MenuPage from "./pages/MenuPage";
+import BahanPage from "./pages/BahanPage";
 
 export default function App() {
   const [open, setOpen] = useState(false);
@@ -15,6 +16,7 @@ export default function App() {
         <main className="flex-1 overflow-auto p-4">
           <Routes>
             <Route path="/" element={<MenuPage />} />
+            <Route path="/bahan" element={<BahanPage />} />
           </Routes>
         </main>
       </div>
