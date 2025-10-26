@@ -42,30 +42,30 @@ exports.createOrUpdate = async (req, res) => {
         return res.status(400).json({ error: 'id_bahan, jumlah_tambah, dan tanggal wajib diisi' });
     }
 
-    // try {
-    //     // 1️⃣ Update stok bahan
-    //     await db.query('UPDATE bahan SET stok = stok + ? WHERE id_bahan=?', [jumlah_tambah, id_bahan]);
+    try {
+        // 1️⃣ Update stok bahan
+        await db.query('UPDATE bahan SET stok = stok + ? WHERE id_bahan=?', [jumlah_tambah, id_bahan]);
 
-    //     // 2️⃣ Cek apakah restock untuk bahan ini sudah ada
-    //     const [rows] = await db.query('SELECT * FROM restock WHERE id_bahan=?', [id_bahan]);
+        // // 2️⃣ Cek apakah restock untuk bahan ini sudah ada
+        // const [rows] = await db.query('SELECT * FROM restock WHERE id_bahan=?', [id_bahan]);
 
-    //     if (rows.length === 0) {
-    //         // Belum ada, buat baris baru
-    //         await db.query('INSERT INTO restock (id_bahan, jumlah_tambah, tanggal) VALUES (?, ?, ?)', [id_bahan, jumlah_tambah, tanggal]);
-    //     } else {
-    //         // Sudah ada, **update jumlah_tambah dengan nilai input terakhir**, tidak kumulatif
-    //         await db.query('UPDATE restock SET jumlah_tambah=?, tanggal=? WHERE id_bahan=?', [jumlah_tambah, tanggal, id_bahan]);
-    //     }
+        // if (rows.length === 0) {
+        //     // Belum ada, buat baris baru
+        //     await db.query('INSERT INTO restock (id_bahan, jumlah_tambah, tanggal) VALUES (?, ?, ?)', [id_bahan, jumlah_tambah, tanggal]);
+        // } else {
+        //     // Sudah ada, **update jumlah_tambah dengan nilai input terakhir**, tidak kumulatif
+        //     await db.query('UPDATE restock SET jumlah_tambah=?, tanggal=? WHERE id_bahan=?', [jumlah_tambah, tanggal, id_bahan]);
+        // }
 
-    //     res.json({
-    //         message: 'Restock berhasil ditambahkan atau diupdate',
-    //         id_bahan,
-    //         jumlah_tambah,
-    //         tanggal
-    //     });
+        // res.json({
+        //     message: 'Restock berhasil ditambahkan atau diupdate',
+        //     id_bahan,
+        //     jumlah_tambah,
+        //     tanggal
+        // });
 
-    // } catch (err) {
-    //     console.error(err);
-    //     res.status(500).json({ error: err.message });
-    // }
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 };
