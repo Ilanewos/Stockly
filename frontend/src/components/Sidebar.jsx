@@ -3,10 +3,10 @@ import { NavLink } from "react-router-dom";
 
 const items = [
   { to: "/", label: "Menu" },
-  { to: "/status", label: "Status Pesanan", },
-  { to: "/riwayat", label: "Riwayat Pesanan",  },
-  { to: "/bahan", label: "Bahan",  },
-  { to: "/restock", label: "Restock", },
+  { to: "/status", label: "Status Pesanan" },
+  { to: "/riwayat", label: "Riwayat Pesanan" },
+  { to: "/bahan", label: "Bahan" },
+  { to: "/restock", label: "Restock" },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -23,24 +23,21 @@ export default function Sidebar({ open, onClose }) {
       {/* Sidebar */}
       <aside
         className={`
-          fixed md:relative z-30 inset-y-0 left-0 bg-white h-full border-r shadow-sm
+          fixed md:relative z-30 inset-y-0 left-0 bg-white border-r shadow-sm
           transform transition-transform duration-300 ease-in-out w-64
           ${open ? "translate-x-0" : "-translate-x-full"} 
           md:translate-x-0
+          flex flex-col
         `}
       >
-        <div className="p-6 flex flex-col h-full">
+        <div className="flex-1 flex flex-col h-full overflow-y-auto p-6">
           {/* Header Sidebar */}
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div>
-                <div className="font-bold text-4xl">Stockly</div>
-              </div>
-            </div>
+            <div className="font-bold text-4xl text-center w-full">Stockly</div>
 
             {/* Tombol close (hanya muncul di mobile) */}
             <button
-              className="md:hidden text-gray-500 hover:text-gray-800"
+              className="md:hidden text-gray-500 hover:text-gray-800 absolute top-6 right-6"
               onClick={onClose}
             >
               ✕
@@ -48,7 +45,7 @@ export default function Sidebar({ open, onClose }) {
           </div>
 
           {/* Menu Navigasi */}
-          <nav className="flex flex-col gap-2">
+          <nav className="flex-1 flex flex-col gap-2">
             {items.map((i) => (
               <NavLink
                 key={i.to}
@@ -67,6 +64,11 @@ export default function Sidebar({ open, onClose }) {
               </NavLink>
             ))}
           </nav>
+
+          {/* Opsional footer agar selalu di bawah */}
+          <div className="mt-auto text-gray-400 text-sm">
+            © 2025 Stockly
+          </div>
         </div>
       </aside>
     </>

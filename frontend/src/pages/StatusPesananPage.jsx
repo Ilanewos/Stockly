@@ -23,8 +23,11 @@ export default function StatusPesananPage() {
         const [orders, sum] = await Promise.all([
           getOrders(),
           getOrderSummary(),
-        ]);
-        setPesanan(orders);
+        ])
+
+        const filteredOrders = orders.filter(order => order.status !== "done");
+
+        setPesanan(filteredOrders);
         setSummary(sum);
       } catch (err) {
         console.error("Gagal load data:", err);
@@ -49,11 +52,15 @@ export default function StatusPesananPage() {
   const ubahStatus = async (id, statusBaru) => {
     try {
       await updateOrderStatus(id, statusBaru.toLowerCase());
+
       setPesanan((prev) =>
-        prev.map((p) =>
-          p.id_pesanan === id ? { ...p, status: statusBaru } : p
-        )
+        prev
+          .map((p) =>
+            p.id_pesanan === id ? { ...p, status: statusBaru } : p
+          )
+          .filter((p) => p.status !== "done") // <- filter di sini
       );
+
       refreshSummary();
     } catch (err) {
       alert(err.message);

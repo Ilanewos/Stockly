@@ -102,7 +102,7 @@ export default function MenuPage() {
                 <div className="mb-3">
                   {m.resep && m.resep.length > 0 ? (
                     m.resep.map(r => <Badge key={r.id_resep}>{r.nama_bahan}</Badge>)
-                  ) : (
+                  ) : (-
                     <span className="text-gray-400 text-sm">Belum ada resep</span>
                   )}
                 </div>
@@ -111,7 +111,7 @@ export default function MenuPage() {
                   onClick={() => addToCart(m)}
                 >
                   + Pesan Menu Ini
-                </button>
+                </button>-
               </div>
             ))
           )}
