@@ -46,8 +46,8 @@ exports.createOrUpdate = async (req, res) => {
         // 1️⃣ Update stok bahan
         await db.query('UPDATE bahan SET stok = stok + ? WHERE id_bahan=?', [jumlah_tambah, id_bahan]);
 
-        // // 2️⃣ Cek apakah restock untuk bahan ini sudah ada
-        // const [rows] = await db.query('SELECT * FROM restock WHERE id_bahan=?', [id_bahan]);
+        // 2️⃣ Cek apakah restock untuk bahan ini sudah ada
+        const [rows] = await db.query('SELECT * FROM restock WHERE id_bahan=?', [id_bahan]);
 
         // if (rows.length === 0) {
         //     // Belum ada, buat baris baru
