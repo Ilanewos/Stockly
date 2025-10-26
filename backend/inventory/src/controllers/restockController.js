@@ -93,7 +93,7 @@ exports.update = async (req, res) => {
         // Update restock
         await db.query('UPDATE restock SET jumlah_tambah=?, tanggal=? WHERE id_restock=?', [jumlah_tambah, tanggal, id_restock]);
 
-    //     res.json({ message: 'Restock berhasil diupdate' });
+        res.json({ message: 'Restock berhasil diupdate' });
 
     } catch (err) {
     //     console.error(err);
