@@ -101,25 +101,25 @@ exports.update = async (req, res) => {
     }
 };
 
-// // DELETE restock
-// exports.delete = async (req, res) => {
-//     const { id_restock } = req.params;
+// DELETE restock
+exports.delete = async (req, res) => {
+    const { id_restock } = req.params;
 
-//     try {
-//         const [rows] = await db.query('SELECT id_bahan, jumlah_tambah FROM restock WHERE id_restock=?', [id_restock]);
-//         if (rows.length === 0) return res.status(404).json({ error: 'Restock tidak ditemukan' });
+    try {
+        const [rows] = await db.query('SELECT id_bahan, jumlah_tambah FROM restock WHERE id_restock=?', [id_restock]);
+        if (rows.length === 0) return res.status(404).json({ error: 'Restock tidak ditemukan' });
 
-//         const { id_bahan, jumlah_tambah } = rows[0];
+        const { id_bahan, jumlah_tambah } = rows[0];
 
-//         // Kurangi stok di bahan
-//         await db.query('UPDATE bahan SET stok = stok - ? WHERE id_bahan=?', [jumlah_tambah, id_bahan]);
+        // Kurangi stok di bahan
+        await db.query('UPDATE bahan SET stok = stok - ? WHERE id_bahan=?', [jumlah_tambah, id_bahan]);
 
-//         // Hapus restock
-//         await db.query('DELETE FROM restock WHERE id_restock=?', [id_restock]);
+        // Hapus restock
+        await db.query('DELETE FROM restock WHERE id_restock=?', [id_restock]);
 
-//         res.json({ message: 'Restock berhasil dihapus' });
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ error: err.message });
-//     }
-// };
+        res.json({ message: 'Restock berhasil dihapus' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+};
