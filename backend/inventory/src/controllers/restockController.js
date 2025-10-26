@@ -96,9 +96,9 @@ exports.update = async (req, res) => {
         res.json({ message: 'Restock berhasil diupdate' });
 
     } catch (err) {
-    //     console.error(err);
-    //     res.status(500).json({ error: err.message });
-    // }
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 };
 
 // // DELETE restock
