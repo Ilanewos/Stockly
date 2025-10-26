@@ -79,10 +79,10 @@ exports.update = async (req, res) => {
         return res.status(400).json({ error: 'jumlah_tambah dan tanggal wajib diisi' });
     }
 
-    // try {
-    //     // Ambil data lama
-    //     const [rows] = await db.query('SELECT id_bahan, jumlah_tambah FROM restock WHERE id_restock=?', [id_restock]);
-    //     if (rows.length === 0) return res.status(404).json({ error: 'Restock tidak ditemukan' });
+    try {
+        // Ambil data lama
+        const [rows] = await db.query('SELECT id_bahan, jumlah_tambah FROM restock WHERE id_restock=?', [id_restock]);
+        if (rows.length === 0) return res.status(404).json({ error: 'Restock tidak ditemukan' });
 
     //     const { id_bahan, jumlah_tambah: jumlah_lama } = rows[0];
 
@@ -95,7 +95,7 @@ exports.update = async (req, res) => {
 
     //     res.json({ message: 'Restock berhasil diupdate' });
 
-    // } catch (err) {
+    } catch (err) {
     //     console.error(err);
     //     res.status(500).json({ error: err.message });
     // }
