@@ -9,12 +9,20 @@ export default function RestockPage() {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
+    // Load bahan
     api.getBahan().then(data => {
       setBahanList(data);
       setSelectedId(data[0]?.id_bahan || '');
     });
-    api.getRestock().then(data => setHistory(data));
+
+    // Load restock dari backend
+    fetchHistory();
   }, []);
+
+  const fetchHistory = async () => {
+    const data = await api.getRestock();
+    setHistory(data);
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,8 +30,20 @@ export default function RestockPage() {
 
     const newRestock = { id_bahan: Number(selectedId), jumlah_tambah: Number(jumlah), tanggal };
     const created = await api.createRestock(newRestock);
+
     setHistory([created, ...history]);
     setJumlah('');
+  }
+
+  const handleDelete = async (id_restock) => {
+    try {
+      // Hapus dari backend
+      await api.deleteRestock(id_restock);
+      // Hapus dari state lokal
+      setHistory(prev => prev.filter(item => item.id_restock !== id_restock));
+    } catch (err) {
+      console.error("Gagal menghapus restock:", err);
+    }
   }
 
   return (
@@ -55,21 +75,33 @@ export default function RestockPage() {
 
         <div className="card">
           <h3 className="font-semibold mb-4">Riwayat Restock</h3>
-          {history.length === 0 ? <p className="text-gray-400">Belum ada riwayat restock</p> : (
+          {history.length === 0 ? (
+            <p className="text-gray-400">Belum ada riwayat restock</p>
+          ) : (
             <ul className="space-y-3">
-              {history.map(r => {
-  const b = bahanList.find(x => x.id_bahan === r.id_bahan); // ganti bahanData -> bahanList
-  return (
-    <li key={r.id_restock} className="border rounded-lg p-3">  {/* ganti id_restok -> id_restock */}
-      <div className="flex justify-between">
-        <div>
-          <div className="font-semibold">{b?.nama_bahan}</div>
-          <div className="text-sm text-gray-500">+{r.jumlah_tambah} — {r.tanggal}</div>
-        </div>
-      </div>
-    </li>
-  )
-})}
+              {history.map((r) => {
+                const b = bahanList.find((x) => x.id_bahan === r.id_bahan);
+
+                return (
+                  <li
+                    key={r.id_restock}
+                    className="border rounded-lg p-3 flex justify-between items-center"
+                  >
+                    <div>
+                      <div className="font-semibold">{b?.nama_bahan}</div>
+                      <div className="text-sm text-gray-500">
+                        +{r.jumlah_tambah} — {r.tanggal}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDelete(r.id_restock)}
+                      className="text-red-500 hover:text-red-700 text-sm font-semibold"
+                    >
+                      Hapus
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

@@ -2,11 +2,11 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 
 const items = [
-  { to: "/", label: "Menu", icon: "🍽️" },
-  { to: "/status", label: "Status Pesanan", icon: "⏱️" },
-  { to: "/riwayat", label: "Riwayat Pesanan", icon: "📦" },
-  { to: "/bahan", label: "Bahan", icon: "📋" },
-  { to: "/restock", label: "Restock", icon: "🔁" },
+  { to: "/", label: "Menu" },
+  { to: "/status", label: "Status Pesanan", },
+  { to: "/riwayat", label: "Riwayat Pesanan",  },
+  { to: "/bahan", label: "Bahan",  },
+  { to: "/restock", label: "Restock", },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -33,9 +33,8 @@ export default function Sidebar({ open, onClose }) {
           {/* Header Sidebar */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="text-2xl">🍳</div>
               <div>
-                <div className="font-bold">Stockly</div>
+                <div className="font-bold text-4xl">Stockly</div>
               </div>
             </div>
 

@@ -13,12 +13,14 @@ export default function BahanPage() {
     api.getBahan().then(data => setBahanList(data));
   }, []);
 
-  const filtered = bahanList.filter(b =>
-    b.nama_bahan.toLowerCase().includes(query.toLowerCase())
-  );
+  const filtered = bahanList
+  .filter(b => b && b.nama_bahan)
+  .filter(b => b.nama_bahan.toLowerCase().includes(query.toLowerCase()));
+
 
   const handleAdd = async () => {
-    if (!newBahan.nama_bahan || !newBahan.stok) return;
+  if (!newBahan.nama_bahan || !newBahan.stok) return;
+
 
     // Tentukan satuan
     let satuan = '';
@@ -34,11 +36,17 @@ export default function BahanPage() {
       default: satuan = ''; break;
     }
 
-    const newData = { ...newBahan, satuan: satuan, stok: Number(newBahan.stok) };
-    const created = await api.createBahan(newData);
-    setBahanList([...bahanList, created]);
+    const newData = { nama_bahan: newBahan.nama_bahan, stok: Number(newBahan.stok) };
+
+  try {
+    await api.createBahan(newData);
+    const updatedList = await api.getBahan(); // ambil ulang semua data
+    setBahanList(updatedList); // langsung update state
     setNewBahan({ nama_bahan: '', stok: '' });
+  } catch (error) {
+    console.error("Gagal menambah bahan:", error);
   }
+}
 
   const handleUpdate = async (id) => {
     await api.updateBahan(id, editBahan);
@@ -51,6 +59,8 @@ export default function BahanPage() {
     await api.deleteBahan(id);
     setBahanList(bahanList.filter(b => b.id_bahan !== id));
   }
+
+  
 
   console.log('bahanList:', bahanList);
 
