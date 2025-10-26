@@ -25,5 +25,16 @@ exports.getById = async (req, res) => {
 exports.create = async (req, res) => {
     const { nama_bahan, stok } = req.body;
 
-    
+   try {
+        // 1️⃣ Tambah bahan baru
+        const [result] = await db.query(
+            'INSERT INTO bahan (nama_bahan, stok) VALUES (?, ?)',
+            [nama_bahan, stok]
+        );
+
+        
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
 };
