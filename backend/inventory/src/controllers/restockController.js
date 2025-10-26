@@ -90,8 +90,8 @@ exports.update = async (req, res) => {
         const selisih = jumlah_tambah - jumlah_lama;
         await db.query('UPDATE bahan SET stok = stok + ? WHERE id_bahan=?', [selisih, id_bahan]);
 
-    //     // Update restock
-    //     await db.query('UPDATE restock SET jumlah_tambah=?, tanggal=? WHERE id_restock=?', [jumlah_tambah, tanggal, id_restock]);
+        // Update restock
+        await db.query('UPDATE restock SET jumlah_tambah=?, tanggal=? WHERE id_restock=?', [jumlah_tambah, tanggal, id_restock]);
 
     //     res.json({ message: 'Restock berhasil diupdate' });
 
