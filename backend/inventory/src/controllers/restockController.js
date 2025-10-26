@@ -49,13 +49,13 @@ exports.createOrUpdate = async (req, res) => {
         // 2️⃣ Cek apakah restock untuk bahan ini sudah ada
         const [rows] = await db.query('SELECT * FROM restock WHERE id_bahan=?', [id_bahan]);
 
-        // if (rows.length === 0) {
-        //     // Belum ada, buat baris baru
-        //     await db.query('INSERT INTO restock (id_bahan, jumlah_tambah, tanggal) VALUES (?, ?, ?)', [id_bahan, jumlah_tambah, tanggal]);
-        // } else {
-        //     // Sudah ada, **update jumlah_tambah dengan nilai input terakhir**, tidak kumulatif
-        //     await db.query('UPDATE restock SET jumlah_tambah=?, tanggal=? WHERE id_bahan=?', [jumlah_tambah, tanggal, id_bahan]);
-        // }
+        if (rows.length === 0) {
+            // Belum ada, buat baris baru
+            await db.query('INSERT INTO restock (id_bahan, jumlah_tambah, tanggal) VALUES (?, ?, ?)', [id_bahan, jumlah_tambah, tanggal]);
+        } else {
+            // Sudah ada, **update jumlah_tambah dengan nilai input terakhir**, tidak kumulatif
+            await db.query('UPDATE restock SET jumlah_tambah=?, tanggal=? WHERE id_bahan=?', [jumlah_tambah, tanggal, id_bahan]);
+        }
 
         // res.json({
         //     message: 'Restock berhasil ditambahkan atau diupdate',
