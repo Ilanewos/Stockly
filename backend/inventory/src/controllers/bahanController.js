@@ -32,6 +32,11 @@ exports.create = async (req, res) => {
             [nama_bahan, stok]
         );
 
+         // 2️⃣ Tambah entry di restock
+        await db.query(
+            'INSERT INTO restock (id_bahan, jumlah_tambah, tanggal) VALUES (?, ?, ?)',
+            [id_bahan, stok, new Date()] // jumlah_tambah = stok awal, tanggal = sekarang
+        );
         
     } catch (err) {
         console.error(err);
