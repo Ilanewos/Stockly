@@ -38,6 +38,13 @@ exports.create = async (req, res) => {
             [id_bahan, stok, new Date()] // jumlah_tambah = stok awal, tanggal = sekarang
         );
         
+        res.json({
+            id_bahan,
+            nama_bahan,
+            stok,
+            message: 'Bahan berhasil ditambahkan dan otomatis masuk ke restock'
+        });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });
