@@ -7,6 +7,7 @@ import BahanPage from "./pages/BahanPage";
 import RestockPage from "./pages/RestockPage";
 import RiwayatPesananPage from "./pages/RiwayatPesananPage";
 import StatusPesananPage from "./pages/StatusPesananPage";
+// import OrdersPage from "./pages/OrdersPage";
 
 export default function App() {
   const [open, setOpen] = useState(false);

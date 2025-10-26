@@ -40,9 +40,9 @@ async function listOrders(req, res) {
     }
 
     const sql = `
-      SELECT p.id_pesanan, p.id_menu, m.nama_menu, p.total_bayar, p.status,
-             dp.id_detail, dp.nomor_meja, dp.jumlah AS jumlah_detail, dp.subtotal,
-             p.id_pesanan
+      SELECT p.id_pesanan, p.id_menu, p.meja, m.nama_menu, p.total_bayar, p.status,
+       dp.id_detail, dp.nomor_meja, dp.jumlah AS jumlah_detail, dp.subtotal
+
       FROM pesanan p
       LEFT JOIN menu m ON m.id_menu = p.id_menu
       LEFT JOIN detail_pesanan dp ON dp.id_pesanan = p.id_pesanan
@@ -243,12 +243,12 @@ async function updateStatus(req, res) {
     // update status di pesanan
     await conn.execute('UPDATE pesanan SET status = ? WHERE id_pesanan = ?', [newStatus, id]);
 
-    // insert ke status_pesanan sebagai riwayat
-    const totalBayar = pes.total_bayar || 0;
-    await conn.execute(
-      `INSERT INTO status_pesanan (id_pesanan, id_detail_pesanan, total_bayar, status) VALUES (?, NULL, ?, ?)`,
-      [id, totalBayar, newStatus]
-    );
+    // // insert ke status_pesanan sebagai riwayat
+    // const totalBayar = pes.total_bayar || 0;
+    // await conn.execute(
+    //   `INSERT INTO status_pesanan (id_pesanan, id_detail_pesanan, total_bayar, status) VALUES (?, NULL, ?, ?)`,
+    //   [id, totalBayar, newStatus]
+    // );
 
     await conn.commit();
 

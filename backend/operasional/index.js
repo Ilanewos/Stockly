@@ -1,9 +1,12 @@
 // index.js
 const express = require('express');
+const cors = require('cors'); // tambahkan ini
 require('dotenv').config();
+
 const app = express();
 const orderRoutes = require('./routes/orderRoutes');
 
+app.use(cors()); 
 app.use(express.json());
 app.use('/api', orderRoutes);
 
