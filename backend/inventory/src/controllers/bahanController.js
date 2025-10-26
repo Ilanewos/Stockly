@@ -62,3 +62,14 @@ exports.update = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+// DELETE bahan
+exports.delete = async (req, res) => {
+    const { id_bahan } = req.params;
+    try {
+        await db.query('DELETE FROM bahan WHERE id_bahan=?', [id_bahan]);
+        res.json({ message: 'Bahan berhasil dihapus' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
