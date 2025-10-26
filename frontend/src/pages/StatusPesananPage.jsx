@@ -121,12 +121,23 @@ export default function StatusPesananPage() {
             </div>
 
             {/* Detail item */}
-            <ul className="mt-3 border-t pt-2 text-sm">
-              <li className="flex justify-between py-1 text-gray-700">
-                <span>{p.nama_menu || "-"}</span>
-                <span>Rp {Number(p.total_bayar).toLocaleString()}</span>
+           <ul className="mt-3 border-t pt-2 text-sm">
+          {Array.isArray(p.items) ? (
+            p.items.map((item, i) => (
+              <li key={i} className="flex justify-between py-1 text-gray-700">
+                <span>{item.nama_menu} x{item.quantity}</span>
+                <span>Rp {Number(item.subtotal).toLocaleString()}</span>
               </li>
-            </ul>
+            ))
+          ) : (
+            <li className="flex justify-between py-1 text-gray-700">
+              <span>{p.nama_menu} x{p.quantity}</span>
+              <span>Rp {Number(p.subtotal).toLocaleString()}</span>
+            </li>
+          )}
+        </ul>
+
+
           </div>
         ))}
       </div>
