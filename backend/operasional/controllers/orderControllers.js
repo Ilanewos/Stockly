@@ -40,15 +40,13 @@ async function listOrders(req, res) {
     }
 
     const sql = `
-      SELECT p.id_pesanan, p.id_menu, p.meja, m.nama_menu, p.total_bayar, p.status,
-       dp.id_detail, dp.nomor_meja, dp.jumlah AS jumlah_detail, dp.subtotal
-
-      FROM pesanan p
-      LEFT JOIN menu m ON m.id_menu = p.id_menu
-      LEFT JOIN detail_pesanan dp ON dp.id_pesanan = p.id_pesanan
-      ${where}
-      ORDER BY p.id_pesanan DESC
-      LIMIT ? OFFSET ?
+      SELECT p.id_pesanan, p.meja, p.total_bayar, p.status,
+       i.id_menu, m.nama_menu, i.quantity, i.subtotal
+FROM pesanan p
+LEFT JOIN item_pesanan i ON i.id_pesanan = p.id_pesanan
+LEFT JOIN menu m ON m.id_menu = i.id_menu
+ORDER BY p.id_pesanan DESC
+LIMIT ? OFFSET ?
     `;
 
     // tambahkan params limit & offset
@@ -78,20 +76,48 @@ async function historyOrders(req, res) {
     const limitNum = Math.max(parseInt(limit, 10) || 20, 1);
     const offset = (Math.max(parseInt(page, 10) || 1, 1) - 1) * limitNum;
 
-    const sql = `
-      SELECT p.id_pesanan, p.id_menu, m.nama_menu, p.total_bayar, p.status, sp.tanggal_riwayat
-      FROM pesanan p
-      LEFT JOIN menu m ON m.id_menu = p.id_menu
-      LEFT JOIN status_pesanan sp ON sp.id_pesanan = p.id_pesanan AND sp.status = 'done'
-      WHERE p.status = 'done'
-      ORDER BY sp.tanggal_riwayat DESC
-      LIMIT ? OFFSET ?
-    `;
-    const [rows] = await pool.execute(sql, [limitNum, offset]);
-    return res.json({ data: rows, meta: { page: Number(page), limit: limitNum } });
+    // Ambil semua order dengan status 'done'
+   const [ordersRows] = await pool.execute(
+  `SELECT p.id_pesanan, p.meja, p.total_bayar, p.status,
+          sp.tanggal_riwayat
+   FROM pesanan p
+   LEFT JOIN status_pesanan sp 
+     ON sp.id_pesanan = p.id_pesanan AND sp.status = 'done'
+   WHERE p.status = 'done'
+   ORDER BY sp.tanggal_riwayat DESC
+   LIMIT ? OFFSET ?`,
+  [limitNum, offset]
+);
+
+    const orderIds = ordersRows.map(o => o.id_pesanan);
+    if (orderIds.length === 0) {
+      return res.json({ data: [], meta: { page: Number(page), limit: limitNum } });
+    }
+
+    // Ambil semua item pesanan terkait
+    const [itemsRows] = await pool.execute(
+      `SELECT i.id_pesanan, i.id_menu, m.nama_menu, i.quantity, i.subtotal
+       FROM item_pesanan i
+       JOIN menu m ON m.id_menu = i.id_menu
+       WHERE i.id_pesanan IN (${orderIds.map(() => '?').join(',')})
+       ORDER BY i.id_pesanan ASC`,
+      orderIds
+    );
+
+    // Gabungkan items ke masing-masing order
+    const data = ordersRows.map(o => ({
+      id_pesanan: o.id_pesanan,
+      meja: o.meja,
+      total_bayar: o.total_bayar,
+      status: o.status,
+      tanggal_riwayat: o.tanggal_riwayat,
+      items: itemsRows.filter(i => i.id_pesanan === o.id_pesanan)
+    }));
+
+    return res.json({ data, meta: { page: Number(page), limit: limitNum } });
   } catch (err) {
     console.error('historyOrders error', err);
-    return res.status(500).json({ error: 'Gagal mengambil riwayat pesanan' });
+    return res.status(500).json({ error: 'Gagal mengambil riwayat pesanan', details: err.message });
   }
 }
 
@@ -243,12 +269,12 @@ async function updateStatus(req, res) {
     // update status di pesanan
     await conn.execute('UPDATE pesanan SET status = ? WHERE id_pesanan = ?', [newStatus, id]);
 
-    // // insert ke status_pesanan sebagai riwayat
-    // const totalBayar = pes.total_bayar || 0;
-    // await conn.execute(
-    //   `INSERT INTO status_pesanan (id_pesanan, id_detail_pesanan, total_bayar, status) VALUES (?, NULL, ?, ?)`,
-    //   [id, totalBayar, newStatus]
-    // );
+    // insert ke status_pesanan sebagai riwayat
+    const totalBayar = pes.total_bayar || 0;
+    await conn.execute(
+      `INSERT INTO status_pesanan (id_pesanan, id_detail_pesanan, total_bayar, status) VALUES (?, NULL, ?, ?)`,
+      [id, totalBayar, newStatus]
+    );
 
     await conn.commit();
 
