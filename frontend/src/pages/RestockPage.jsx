@@ -1,18 +1,29 @@
-import React, { useState } from 'react'
-import { bahan as bahanData, restock as restockData } from '../data'
+import React, { useState, useEffect } from 'react';
+import { api } from '../api';
 
-export default function RestockPage(){
-  const [selectedId, setSelectedId] = useState(bahanData[0]?.id_bahan || '')
-  const [jumlah, setJumlah] = useState('')
-  const [tanggal, setTanggal] = useState(new Date().toISOString().slice(0,10))
-  const [history, setHistory] = useState(restockData)
+export default function RestockPage() {
+  const [bahanList, setBahanList] = useState([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [jumlah, setJumlah] = useState('');
+  const [tanggal, setTanggal] = useState(new Date().toISOString().slice(0,10));
+  const [history, setHistory] = useState([]);
 
-  function handleSubmit(e){
-    e.preventDefault()
-    if(!jumlah) return
-    const next = { id_restok: history.length+1, id_bahan: Number(selectedId), jumlah_tambah: Number(jumlah), tanggal }
-    setHistory([next, ...history])
-    setJumlah('')
+  useEffect(() => {
+    api.getBahan().then(data => {
+      setBahanList(data);
+      setSelectedId(data[0]?.id_bahan || '');
+    });
+    api.getRestock().then(data => setHistory(data));
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!jumlah || !selectedId) return;
+
+    const newRestock = { id_bahan: Number(selectedId), jumlah_tambah: Number(jumlah), tanggal };
+    const created = await api.createRestock(newRestock);
+    setHistory([created, ...history]);
+    setJumlah('');
   }
 
   return (
@@ -27,7 +38,7 @@ export default function RestockPage(){
             <div>
               <label className="block text-sm mb-1">Pilih Bahan</label>
               <select value={selectedId} onChange={e => setSelectedId(e.target.value)} className="w-full p-3 border rounded-lg">
-                {bahanData.map(b => <option key={b.id_bahan} value={b.id_bahan}>{b.nama_bahan}</option>)}
+                {bahanList.map(b => <option key={b.id_bahan} value={b.id_bahan}>{b.nama_bahan}</option>)}
               </select>
             </div>
             <div>
@@ -47,18 +58,18 @@ export default function RestockPage(){
           {history.length === 0 ? <p className="text-gray-400">Belum ada riwayat restock</p> : (
             <ul className="space-y-3">
               {history.map(r => {
-                const b = bahanData.find(x => x.id_bahan === r.id_bahan)
-                return (
-                  <li key={r.id_restok} className="border rounded-lg p-3">
-                    <div className="flex justify-between">
-                      <div>
-                        <div className="font-semibold">{b?.nama_bahan}</div>
-                        <div className="text-sm text-gray-500">+{r.jumlah_tambah} — {r.tanggal}</div>
-                      </div>
-                    </div>
-                  </li>
-                )
-              })}
+  const b = bahanList.find(x => x.id_bahan === r.id_bahan); // ganti bahanData -> bahanList
+  return (
+    <li key={r.id_restock} className="border rounded-lg p-3">  {/* ganti id_restok -> id_restock */}
+      <div className="flex justify-between">
+        <div>
+          <div className="font-semibold">{b?.nama_bahan}</div>
+          <div className="text-sm text-gray-500">+{r.jumlah_tambah} — {r.tanggal}</div>
+        </div>
+      </div>
+    </li>
+  )
+})}
             </ul>
           )}
         </div>
