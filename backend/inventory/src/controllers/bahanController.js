@@ -19,3 +19,11 @@ exports.getById = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+
+// POST tambah bahan baru
+exports.create = async (req, res) => {
+    const { nama_bahan, stok } = req.body;
+
+    
+};
