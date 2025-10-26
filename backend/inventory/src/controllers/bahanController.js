@@ -50,3 +50,15 @@ exports.create = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+// PUT update bahan
+exports.update = async (req, res) => {
+    const { id_bahan } = req.params;
+    const { nama_bahan, stok } = req.body;
+    try {
+        await db.query('UPDATE bahan SET nama_bahan=?, stok=? WHERE id_bahan=?', [nama_bahan, stok, id_bahan]);
+        res.json({ message: 'Bahan berhasil diupdate' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
