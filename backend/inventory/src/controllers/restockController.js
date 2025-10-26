@@ -57,12 +57,12 @@ exports.createOrUpdate = async (req, res) => {
             await db.query('UPDATE restock SET jumlah_tambah=?, tanggal=? WHERE id_bahan=?', [jumlah_tambah, tanggal, id_bahan]);
         }
 
-        // res.json({
-        //     message: 'Restock berhasil ditambahkan atau diupdate',
-        //     id_bahan,
-        //     jumlah_tambah,
-        //     tanggal
-        // });
+        res.json({
+            message: 'Restock berhasil ditambahkan atau diupdate',
+            id_bahan,
+            jumlah_tambah,
+            tanggal
+        });
 
     } catch (err) {
         console.error(err);
