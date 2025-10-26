@@ -84,11 +84,11 @@ exports.update = async (req, res) => {
         const [rows] = await db.query('SELECT id_bahan, jumlah_tambah FROM restock WHERE id_restock=?', [id_restock]);
         if (rows.length === 0) return res.status(404).json({ error: 'Restock tidak ditemukan' });
 
-    //     const { id_bahan, jumlah_tambah: jumlah_lama } = rows[0];
+        const { id_bahan, jumlah_tambah: jumlah_lama } = rows[0];
 
-    //     // Koreksi stok bahan sesuai selisih
-    //     const selisih = jumlah_tambah - jumlah_lama;
-    //     await db.query('UPDATE bahan SET stok = stok + ? WHERE id_bahan=?', [selisih, id_bahan]);
+        // Koreksi stok bahan sesuai selisih
+        const selisih = jumlah_tambah - jumlah_lama;
+        await db.query('UPDATE bahan SET stok = stok + ? WHERE id_bahan=?', [selisih, id_bahan]);
 
     //     // Update restock
     //     await db.query('UPDATE restock SET jumlah_tambah=?, tanggal=? WHERE id_restock=?', [jumlah_tambah, tanggal, id_restock]);
