@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:3000/api'; // sesuaikan port backendmu
+const API_BASE = 'http://localhost:4000/api'; // sesuaikan port backendmu
+const API_BASE_5000 = 'http://localhost:5000';
 
 export const api = {
   // ====== BAHAN ======
@@ -104,4 +105,26 @@ export const api = {
       return null;
     }
   },
+
+    getMenu: async () => {
+  try {
+    const res = await axios.get(`${API_BASE_5000}/menu`.replace(/\/+$/, ''));
+    return res.data;
+  } catch (err) {
+    console.error('Error getMenu:', err);
+    return [];
+  }
+},
+
+   createOrder: async (data) => {
+    try {
+      const res = await axios.post(`${API_BASE_5000}/orders`, data);
+      return res.data;
+    } catch (err) {
+      console.error('Error createOrder:', err.response?.data || err);
+      return null;
+    }
+  },
 };
+
+
