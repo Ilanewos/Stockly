@@ -1,177 +1,323 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../api';
+import React, { useState, useEffect } from "react";
+import { Plus, Package, AlertTriangle, X, Edit3, RefreshCw, Trash2 } from "lucide-react";
 
 export default function BahanPage() {
   const [bahanList, setBahanList] = useState([]);
-  const [query, setQuery] = useState('');
-  const [newBahan, setNewBahan] = useState({ nama_bahan: '', stok: '' });
-  const [editingId, setEditingId] = useState(null);
-  const [editBahan, setEditBahan] = useState({ nama_bahan: '', stok: '' });
-  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showRestockDialog, setShowRestockDialog] = useState(false);
+  const [selectedBahan, setSelectedBahan] = useState(null);
+  const [newBahan, setNewBahan] = useState({
+    nama_bahan: "",
+    stok: 0,
+    satuan: "",
+    min_stok: 0,
+    harga: 0,
+    last_restock: "",
+  });
+  const [editBahan, setEditBahan] = useState({});
+  const [restockAmount, setRestockAmount] = useState(0);
+  const [restockDate, setRestockDate] = useState("");
 
   useEffect(() => {
-    api.getBahan().then(data => setBahanList(data));
+    setBahanList([
+      { id_bahan: 1, nama_bahan: "Tepung Terigu", stok: 10, satuan: "kg", min_stok: 5, harga: 15000, last_restock: "2025-10-29" },
+      { id_bahan: 2, nama_bahan: "Telur Ayam", stok: 50, satuan: "butir", min_stok: 30, harga: 2000, last_restock: "2025-10-28" },
+      { id_bahan: 3, nama_bahan: "Gula Pasir", stok: 3, satuan: "kg", min_stok: 5, harga: 14000, last_restock: "2025-10-27" },
+    ]);
   }, []);
 
-  const filtered = bahanList
-  .filter(b => b && b.nama_bahan)
-  .filter(b => b.nama_bahan.toLowerCase().includes(query.toLowerCase()));
+  const lowStockItems = bahanList.filter((b) => b.stok <= (b.min_stok || 0));
+  const filtered = bahanList.filter((b) => {
+    const match = b.nama_bahan.toLowerCase().includes(searchTerm.toLowerCase());
+    if (filterStatus === "low") return match && b.stok <= (b.min_stok || 0);
+    if (filterStatus === "normal") return match && b.stok > (b.min_stok || 0);
+    return match;
+  });
 
+  const handleAdd = () => {
+    if (!newBahan.nama_bahan || newBahan.stok <= 0) return;
+    const newId = bahanList.length ? Math.max(...bahanList.map((b) => b.id_bahan)) + 1 : 1;
+    const created = {
+      ...newBahan,
+      id_bahan: newId,
+      last_restock: new Date().toLocaleDateString("id-ID"),
+    };
+    setBahanList([...bahanList, created]);
+    setNewBahan({ nama_bahan: "", stok: 0, satuan: "", min_stok: 0, harga: 0, last_restock: "" });
+    setShowAddDialog(false);
+  };
 
-  const handleAdd = async () => {
-  if (!newBahan.nama_bahan || !newBahan.stok) return;
-
-
-    // Tentukan satuan
-    let satuan = '';
-    switch (newBahan.nama_bahan.toLowerCase()) {
-      case 'minyak': satuan = 'ml'; break;
-      case 'cabai': satuan = 'buah'; break;
-      case 'bawang': satuan = 'butir'; break;
-      case 'ayam': satuan = 'potong'; break;
-      case 'nasi': satuan = 'porsi'; break;
-      case 'mie': satuan = 'porsi'; break;
-      case 'kecap': satuan = 'botol'; break;
-      case 'sayur': satuan = 'ikat'; break;
-      default: satuan = ''; break;
+  const handleRestock = () => {
+    if (selectedBahan && restockAmount > 0) {
+      const updated = {
+        ...selectedBahan,
+        stok: selectedBahan.stok + restockAmount,
+        last_restock: restockDate || new Date().toLocaleDateString("id-ID"),
+      };
+      setBahanList(
+        bahanList.map((b) => (b.id_bahan === selectedBahan.id_bahan ? updated : b))
+      );
+      setRestockAmount(0);
+      setRestockDate("");
+      setSelectedBahan(null);
+      setShowRestockDialog(false);
     }
+  };
 
-    const newData = { nama_bahan: newBahan.nama_bahan, stok: Number(newBahan.stok) };
+  const handleEdit = () => {
+    if (!editBahan.nama_bahan) return;
+    setBahanList(
+      bahanList.map((b) => (b.id_bahan === editBahan.id_bahan ? editBahan : b))
+    );
+    setShowEditDialog(false);
+  };
 
-  try {
-    await api.createBahan(newData);
-    const updatedList = await api.getBahan(); // ambil ulang semua data
-    setBahanList(updatedList); // langsung update state
-    setNewBahan({ nama_bahan: '', stok: '' });
-  } catch (error) {
-    console.error("Gagal menambah bahan:", error);
-  }
-}
+  const handleDelete = (id) => {
+    setBahanList(bahanList.filter((b) => b.id_bahan !== id));
+  };
 
-  const handleUpdate = async (id) => {
-    await api.updateBahan(id, editBahan);
-    setBahanList(bahanList.map(b => b.id_bahan === id ? { ...b, ...editBahan } : b));
-    setEditingId(null);
-    setEditBahan({ nama_bahan: '', stok: '' });
-  }
-
-  const handleDelete = async (id) => {
-    await api.deleteBahan(id);
-    setBahanList(bahanList.filter(b => b.id_bahan !== id));
-  }
-
-  
-
-  console.log('bahanList:', bahanList);
-
+  const getStockStatus = (bahan) => {
+    if (bahan.stok <= (bahan.min_stok || 0)) {
+      return { label: "Menipis", color: "bg-red-100 text-red-700", icon: AlertTriangle };
+    }
+    return { label: "Normal", color: "bg-green-100 text-green-700", icon: Package };
+  };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-3">Daftar Bahan</h2>
-      <p className="text-gray-500 mb-4">Kelola stok bahan-bahan restoran</p>
-
-      <input
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        placeholder="Cari bahan..."
-        className="w-full mb-6 p-3 rounded-lg border"
-      />
-
-      {/* Form Tambah Bahan */}
-      <div className="mb-6 flex gap-2">
-        <input
-          value={newBahan.nama_bahan}
-          onChange={e => setNewBahan({ ...newBahan, nama_bahan: e.target.value })}
-          placeholder="Nama bahan"
-          className="flex-1 p-2 border rounded"
-        />
-        <input
-          type="number"
-          value={newBahan.stok}
-          onChange={e => setNewBahan({ ...newBahan, stok: e.target.value })}
-          placeholder="Stok"
-          className="w-24 p-2 border rounded"
-        />
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Manajemen Bahan</h1>
         <button
-  onClick={handleAdd}
-  className="bg-orange-600 text-white px-4 rounded hover:bg-blue-600"
->
-  Tambah
-</button>
-
+          onClick={() => setShowAddDialog(true)}
+          className="flex items-center gap-2 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800"
+        >
+          <Plus size={18} /> Tambah Bahan
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filtered.map(b => (
-          <div key={b.id_bahan} className="border rounded p-4 shadow-sm hover:shadow-md relative">
-            {editingId === b.id_bahan ? (
-              <>
-                <input
-                  value={editBahan.nama_bahan}
-                  onChange={e => setEditBahan({ ...editBahan, nama_bahan: e.target.value })}
-                  className="w-full p-2 border rounded mb-2"
-                />
-                <input
-                  type="number"
-                  value={editBahan.stok}
-                  onChange={e => setEditBahan({ ...editBahan, stok: e.target.value })}
-                  className="w-full p-2 border rounded mb-2"
-                />
-                <div className="flex gap-2">
-                  <button
-  onClick={() => handleUpdate(b.id_bahan)}
-  className="bg-orange-600 text-white px-3 rounded hover:bg-blue-600"
->
-  Simpan
-</button>
+      {/* Statistik */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard title="Total Bahan" value={bahanList.length} />
+        <StatCard title="Stok Menipis" value={lowStockItems.length} color="text-orange-600" />
+        <StatCard
+          title="Nilai Total Stok"
+          value={`Rp ${bahanList
+            .reduce((sum, b) => sum + b.stok * (b.harga || 0), 0)
+            .toLocaleString("id-ID")}`}
+        />
+      </div>
 
-                  <button
-                    onClick={() => setEditingId(null)}
-                    className="bg-gray-300 px-3 rounded hover:bg-gray-400"
-                  >
-                    Batal
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="font-semibold">{b.nama_bahan}</h3>
-                <p className="text-sm text-gray-500 mt-2">
-                  Jumlah: <span className="font-semibold">{b.stok} {b.satuan}</span>
-                </p>
+      {/* Filter + Table */}
+      <div className="bg-white shadow rounded-xl p-4">
+        <div className="flex flex-wrap gap-4 justify-between mb-4">
+          <input
+            type="text"
+            placeholder="Cari bahan..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border rounded-lg px-3 py-2 w-64"
+          />
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="border rounded-lg px-3 py-2 bg-white text-gray-800 cursor-pointer hover:bg-gray-200 transition-colors"
+          >
+            <option value="all">Semua</option>
+            <option value="low">Menipis</option>
+            <option value="normal">Normal</option>
+          </select>
+        </div>
 
-                {/* Tiga titik menu */}
-                <div className="absolute top-2 right-2">
-                  <button
-                    onClick={() => setMenuOpenId(menuOpenId === b.id_bahan ? null : b.id_bahan)}
-                    className="text-gray-500 hover:text-gray-700 font-bold"
-                  >
-                    ⋮
-                  </button>
-
-                  {menuOpenId === b.id_bahan && (
-                    <div className="absolute right-0 mt-1 w-24 bg-white border rounded shadow-lg z-10">
-                      <button
-                        onClick={() => { setEditingId(b.id_bahan); setEditBahan({ nama_bahan: b.nama_bahan, stok: b.stok }); setMenuOpenId(null); }}
-                        className="w-full text-left px-2 py-1 hover:bg-gray-100"
+        <div className="overflow-x-auto">
+          <table className="min-w-full border rounded-lg">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-4 py-2 text-left">Nama</th>
+                <th className="px-4 py-2 text-left">Stok</th>
+                <th className="px-4 py-2 text-left">Satuan</th>
+                <th className="px-4 py-2 text-left">Harga</th>
+                <th className="px-4 py-2 text-left">Min Stok</th>
+                <th className="px-4 py-2 text-left">Status</th>
+                <th className="px-4 py-2 text-left">Terakhir Restock</th>
+                <th className="px-4 py-2 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((b) => {
+                const status = getStockStatus(b);
+                const Icon = status.icon;
+                return (
+                  <tr key={b.id_bahan} className="border-t hover:bg-gray-50">
+                    <td className="px-4 py-2">{b.nama_bahan}</td>
+                    <td className="px-4 py-2">{b.stok}</td>
+                    <td className="px-4 py-2">{b.satuan}</td>
+                    <td className="px-4 py-2">Rp {b.harga?.toLocaleString("id-ID") || "-"}</td>
+                    <td className="px-4 py-2">{b.min_stok}</td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm ${status.color}`}
                       >
-                        Edit
-                      </button>
-                      <button
-  className="block w-full text-left px-2 py-1 hover:bg-gray-100 text-sm text-black"
-  onClick={() => { handleDelete(b.id_bahan); setMenuOpenId(null) }}
->
-  Hapus
-</button>
+                        <Icon size={14} /> {status.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2">{b.last_restock || "-"}</td>
+                    <td className="px-4 py-2 flex justify-center gap-2">
+                      <IconButton
+                        color="bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                        icon={<RefreshCw size={18} />}
+                        onClick={() => {
+                          setSelectedBahan(b);
+                          setRestockAmount(0);
+                          setRestockDate(b.last_restock || new Date().toISOString().split("T")[0]);
+                          setShowRestockDialog(true);
+                        }}
+                      />
+                      <IconButton
+                        color="bg-blue-100 text-blue-700 hover:bg-blue-200"
+                        icon={<Edit3 size={18} />}
+                        onClick={() => {
+                          setEditBahan(b);
+                          setShowEditDialog(true);
+                        }}
+                      />
+                      <IconButton
+                        color="bg-red-100 text-red-700 hover:bg-red-200"
+                        icon={<Trash2 size={18} />}
+                        onClick={() => handleDelete(b.id_bahan)}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+      {/* Dialog Tambah / Edit / Restock */}
+      {showAddDialog && (
+        <DialogWrapper title="Tambah Bahan Baru" onClose={() => setShowAddDialog(false)}>
+          {["nama_bahan", "stok", "satuan", "harga", "min_stok"].map((field) => (
+            <InputField
+              key={field}
+              label={field.replace("_", " ")}
+              type={["stok", "harga", "min_stok"].includes(field) ? "number" : "text"}
+              value={newBahan[field]}
+              onChange={(e) => setNewBahan({ ...newBahan, [field]: e.target.value })}
+            />
+          ))}
+          <DialogActions onCancel={() => setShowAddDialog(false)} onConfirm={handleAdd} confirmLabel="Tambah" />
+        </DialogWrapper>
+      )}
+
+      {showEditDialog && editBahan && (
+        <DialogWrapper title={`Edit ${editBahan.nama_bahan}`} onClose={() => setShowEditDialog(false)}>
+          {["nama_bahan", "stok", "satuan", "harga", "min_stok"].map((field) => (
+            <InputField
+              key={field}
+              label={field.replace("_", " ")}
+              type={["stok", "harga", "min_stok"].includes(field) ? "number" : "text"}
+              value={editBahan[field]}
+              onChange={(e) => setEditBahan({ ...editBahan, [field]: e.target.value })}
+            />
+          ))}
+          <DialogActions onCancel={() => setShowEditDialog(false)} onConfirm={handleEdit} confirmLabel="Simpan" />
+        </DialogWrapper>
+      )}
+
+      {showRestockDialog && selectedBahan && (
+        <DialogWrapper title={`Restock ${selectedBahan.nama_bahan}`} onClose={() => setShowRestockDialog(false)}>
+          <InputField label="Stok Saat Ini" value={`${selectedBahan.stok} ${selectedBahan.satuan}`} disabled />
+          <InputField
+            label="Tambah Stok"
+            type="number"
+            value={restockAmount}
+            onChange={(e) => setRestockAmount(Number(e.target.value))}
+          />
+          <InputField
+            label="Tanggal Restock"
+            type="date"
+            value={restockDate}
+            onChange={(e) => setRestockDate(e.target.value)}
+          />
+          <div className="mt-2">
+            <label className="block text-sm mb-1 font-medium">Total Setelah Restock</label>
+            <div className="p-2 bg-gray-100 rounded-lg">
+              {(selectedBahan.stok || 0) + restockAmount} {selectedBahan.satuan}
+            </div>
           </div>
-        ))}
+          <DialogActions onCancel={() => setShowRestockDialog(false)} onConfirm={handleRestock} confirmLabel="Konfirmasi" />
+        </DialogWrapper>
+      )}
+    </div>
+  );
+}
+
+/* Komponen kecil */
+function StatCard({ title, value, color }) {
+  return (
+    <div className="bg-white shadow rounded-xl p-4">
+      <h3 className="font-semibold">{title}</h3>
+      <p className={`text-2xl font-bold mt-2 ${color || ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function IconButton({ color, icon, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`p-2 rounded-lg transition-colors duration-150 ${color}`}
+    >
+      {icon}
+    </button>
+  );
+}
+
+function DialogWrapper({ title, onClose, children }) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">{title}</h3>
+          <button onClick={onClose}>
+            <X size={20} />
+          </button>
+        </div>
+        <div className="space-y-3">{children}</div>
       </div>
     </div>
-  )
+  );
+}
+
+function InputField({ label, type = "text", value, onChange, disabled }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-1 capitalize">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        className={`border rounded-lg px-3 py-2 w-full ${disabled ? "bg-gray-100" : ""}`}
+      />
+    </div>
+  );
+}
+
+function DialogActions({ onCancel, onConfirm, confirmLabel }) {
+  return (
+    <div className="flex justify-end gap-2 mt-4">
+      <button onClick={onCancel} className="border px-4 py-2 rounded-lg hover:bg-gray-100">
+        Batal
+      </button>
+      <button onClick={onConfirm} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+        {confirmLabel}
+      </button>
+    </div>
+  );
 }
