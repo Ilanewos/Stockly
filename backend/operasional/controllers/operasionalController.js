@@ -156,3 +156,27 @@ exports.getReport = async (req, res) => {
     return res.status(500).json({ success:false, message: 'Server error', error: err.message });
   }
 };
+
+/**
+ * GET /operasional/stok-bahan
+ * tampilkan kondisi stok bahan (nama, stok, satuan, status)
+ */
+exports.getStokBahan = async (req, res) => {
+  try {
+    const conn = await db.getConnection();
+    const [rows] = await conn.execute(`
+      SELECT 
+        nama_bahan AS namaBahan,
+        stok,
+        satuan,
+        status
+      FROM bahan
+      ORDER BY status DESC, nama_bahan ASC
+    `);
+    conn.release();
+    return res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Gagal mengambil data stok bahan', error: err.message });
+  }
+};

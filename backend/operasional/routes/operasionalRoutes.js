@@ -15,4 +15,7 @@ router.post('/orders/:id/done', controller.finishOrder);
 // laporan penjualan (opsional filter tanggal: from,to -> YYYY-MM-DD)
 router.get('/report', controller.getReport);
 
+// kondisi stok bahan
+router.get('/stok-bahan', controller.getStokBahan);
+
 module.exports = router;
