@@ -1,14 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; 
+import axios from "axios";
 import { Plus, ChefHat, Trash2 } from "lucide-react";
-import { resep as initialResep, bahan as bahanData } from "../data";
 
 export default function MenuPage() {
-  const [menus, setMenus] = useState([
-    { id_menu: 1, nama_menu: "Nasi Goreng", harga: 15000 },
-    { id_menu: 2, nama_menu: "Mie Goreng", harga: 12000 },
-    { id_menu: 3, nama_menu: "Es Teh", harga: 5000 },
-  ]);
-  const [recipes, setRecipes] = useState(initialResep);
+  const [menus, setMenus] = useState([]);
+  const [recipes, setRecipes] = useState([]);
+  const [bahanList, setBahanList] = useState([]);
   const [search, setSearch] = useState("");
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
@@ -17,23 +14,70 @@ export default function MenuPage() {
   const [recipeItems, setRecipeItems] = useState([]);
   const [editMenu, setEditMenu] = useState(null);
 
+  const API_MENU = "http://localhost:4000/menu";
+  const API_RESEP = "http://localhost:4000/resep";
+  const API_BAHAN = "http://localhost:5000/api/bahan";
+
+  // ================== FETCH DATA DARI BACKEND ==================
+  const fetchMenus = async () => {
+    try {
+      const res = await axios.get(API_MENU);
+      setMenus(res.data);
+    } catch (err) {
+      console.error("Error fetch menu:", err);
+    }
+  };
+
+  const fetchRecipes = async () => {
+    try {
+      const res = await axios.get(API_RESEP);
+      setRecipes(res.data);
+    } catch (err) {
+      console.error("Error fetch resep:", err);
+    }
+  };
+
+  const fetchBahan = async () => {
+    try {
+      const res = await axios.get(API_BAHAN);
+      setBahanList(res.data);
+    } catch (err) {
+      console.error("Error fetch bahan:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchMenus();
+    fetchRecipes();
+    fetchBahan();
+  }, []);
+
+  // ================== FILTER MENU ==================
   const filteredMenus = menus.filter((m) =>
     m.nama_menu.toLowerCase().includes(search.toLowerCase())
   );
 
-  const getRecipeForMenu = (id_menu) => recipes.filter((r) => r.id_menu === id_menu);
+  // ================== AMBIL RESEP PER MENU ==================
+  const getRecipeForMenu = (id_menu) =>
+    recipes.filter((r) => r.id_menu === id_menu);
 
-  const handleAddMenu = () => {
+  // ================== CRUD MENU ==================
+  const handleAddMenu = async () => {
     if (!newMenu.nama_menu || !newMenu.harga) {
       alert("Nama dan harga wajib diisi!");
       return;
     }
-    setMenus((prev) => [
-      ...prev,
-      { ...newMenu, id_menu: Date.now(), harga: parseInt(newMenu.harga) },
-    ]);
-    setNewMenu({ nama_menu: "", harga: "" });
-    setShowMenuModal(false);
+    try {
+      await axios.post(API_MENU, {
+        nama_menu: newMenu.nama_menu,
+        harga: parseInt(newMenu.harga)
+      });
+      setNewMenu({ nama_menu: "", harga: "" });
+      setShowMenuModal(false);
+      fetchMenus();
+    } catch (err) {
+      console.error("Error add menu:", err);
+    }
   };
 
   const handleOpenEditMenu = (menu) => {
@@ -41,31 +85,48 @@ export default function MenuPage() {
     setShowMenuModal(true);
   };
 
-  const handleSaveEditMenu = () => {
+  const handleSaveEditMenu = async () => {
     if (!editMenu.nama_menu || !editMenu.harga) {
       alert("Nama dan harga wajib diisi!");
       return;
     }
-    setMenus((prev) =>
-      prev.map((m) =>
-        m.id_menu === editMenu.id_menu ? { ...editMenu, harga: parseInt(editMenu.harga) } : m
-      )
-    );
-    setEditMenu(null);
-    setShowMenuModal(false);
-  };
-
-  const handleDeleteMenu = (id_menu) => {
-    if (confirm("Apakah Anda yakin ingin menghapus menu ini?")) {
-      setMenus((prev) => prev.filter((m) => m.id_menu !== id_menu));
-      setRecipes((prev) => prev.filter((r) => r.id_menu !== id_menu));
+    try {
+      await axios.put(`${API_MENU}/${editMenu.id_menu}`, {
+        nama_menu: editMenu.nama_menu,
+        harga: parseInt(editMenu.harga)
+      });
+      setEditMenu(null);
+      setShowMenuModal(false);
+      fetchMenus();
+    } catch (err) {
+      console.error("Error update menu:", err);
     }
   };
 
+  const handleDeleteMenu = async (id_menu) => {
+    if (confirm("Apakah Anda yakin ingin menghapus menu ini?")) {
+      try {
+        await axios.delete(`${API_MENU}/${id_menu}`);
+        fetchMenus();
+        // Hapus resep terkait menu ini
+        const relatedRecipes = recipes.filter(r => r.id_menu === id_menu);
+        for (const r of relatedRecipes) {
+          await axios.delete(`${API_RESEP}/${r.id_resep}`);
+        }
+        fetchRecipes();
+      } catch (err) {
+        console.error("Error delete menu:", err);
+      }
+    }
+  };
+
+  // ================== CRUD RESEP ==================
   const openRecipeModal = (menu) => {
     setSelectedMenu(menu);
     const existing = getRecipeForMenu(menu.id_menu);
-    setRecipeItems(existing.map((r) => ({ id_bahan: r.id_bahan, jumlah: r.jumlah })));
+    setRecipeItems(
+      existing.map((r) => ({ id_bahan: r.id_bahan, jumlah: r.jumlah_bahan }))
+    );
     setShowRecipeModal(true);
   };
 
@@ -83,30 +144,42 @@ export default function MenuPage() {
     setRecipeItems(newItems);
   };
 
-  const handleSaveRecipe = () => {
+  const handleSaveRecipe = async () => {
     if (!selectedMenu) return;
-    const newResep = recipeItems
-      .filter((r) => r.id_bahan && r.jumlah > 0)
-      .map((r) => ({
-        id_resep: `${selectedMenu.id_menu}-${r.id_bahan}-${Date.now()}`,
-        id_menu: selectedMenu.id_menu,
-        id_bahan: r.id_bahan,
-        jumlah: parseFloat(r.jumlah),
-      }));
-    const filtered = recipes.filter((r) => r.id_menu !== selectedMenu.id_menu);
-    setRecipes([...filtered, ...newResep]);
-    setShowRecipeModal(false);
-    setRecipeItems([]);
-    setSelectedMenu(null);
+
+    try {
+      // Hapus resep lama
+      const oldRecipes = getRecipeForMenu(selectedMenu.id_menu);
+      for (const r of oldRecipes) {
+        await axios.delete(`${API_RESEP}/${r.id_resep}`);
+      }
+
+      // Tambah resep baru
+      for (const r of recipeItems.filter((r) => r.id_bahan && r.jumlah > 0)) {
+        await axios.post(API_RESEP, {
+          id_menu: selectedMenu.id_menu,
+          id_bahan: r.id_bahan,
+          jumlah_bahan: parseFloat(r.jumlah),
+        });
+      }
+
+      setShowRecipeModal(false);
+      setRecipeItems([]);
+      setSelectedMenu(null);
+      fetchRecipes();
+    } catch (err) {
+      console.error("Error save resep:", err);
+    }
   };
 
+  // ================== RENDER ==================
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">🍽️ Manajemen Menu & Resep</h1>
         <button
-          className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
+          className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center gap-2"
           onClick={() => {
             setShowMenuModal(true);
             setEditMenu(null);
@@ -137,27 +210,27 @@ export default function MenuPage() {
           </thead>
           <tbody>
             {filteredMenus.map((m) => (
-              <tr key={m.id_menu} className="border-t hover:bg-gray-50 transition">
+              <tr key={m.id_menu} className="border-t">
                 <td className="p-3 font-medium">{m.nama_menu}</td>
                 <td className="p-3">Rp {m.harga.toLocaleString()}</td>
-                <td className="p-3 flex flex-wrap gap-2">
+                <td className="p-3 flex gap-2">
                   <button
                     onClick={() => openRecipeModal(m)}
-                    className="bg-amber-100 hover:bg-amber-200 text-amber-700 px-3 py-1 rounded-lg flex items-center gap-1 transition"
+                    className="bg-yellow-500 hover:bg-yellow-500 text-white px-3 py-1 rounded flex items-center gap-1"
                   >
                     <ChefHat className="w-4 h-4" /> Resep
                   </button>
                   <button
                     onClick={() => handleOpenEditMenu(m)}
-                    className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded-lg transition"
+                    className="bg-blue-800 hover:bg-blue-800 text-white px-3 py-1 rounded"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDeleteMenu(m.id_menu)}
-                    className="bg-rose-100 hover:bg-rose-200 text-rose-700 px-3 py-1 rounded-lg transition"
+                    className="bg-red-800 hover:bg-red-800 text-white px-3 py-1 rounded"
                   >
-                    <Trash2 className="w-4 h-4 inline-block mr-1" /> Hapus
+                    Hapus
                   </button>
                 </td>
               </tr>
@@ -199,7 +272,7 @@ export default function MenuPage() {
 
             <div className="flex justify-end gap-2">
               <button
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded"
+                className="px-4 py-2 bg-gray-200 rounded"
                 onClick={() => {
                   setShowMenuModal(false);
                   setEditMenu(null);
@@ -209,7 +282,7 @@ export default function MenuPage() {
                 Batal
               </button>
               <button
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded"
+                className="px-4 py-2 bg-blue-600 text-white rounded"
                 onClick={editMenu ? handleSaveEditMenu : handleAddMenu}
               >
                 Simpan
@@ -237,7 +310,7 @@ export default function MenuPage() {
                     onChange={(e) => handleChangeRecipeItem(i, "id_bahan", e.target.value)}
                   >
                     <option value="">Pilih bahan</option>
-                    {bahanData.map((b) => (
+                    {bahanList.map((b) => (
                       <option key={b.id_bahan} value={b.id_bahan}>
                         {b.nama_bahan} ({b.satuan})
                       </option>
@@ -254,7 +327,7 @@ export default function MenuPage() {
                   />
                 </div>
                 <button
-                  className="p-2 text-rose-500 hover:text-rose-700"
+                  className="p-2 text-red-500 hover:text-red-700"
                   onClick={() => handleRemoveRecipeItem(i)}
                 >
                   <Trash2 className="w-5 h-5" />
@@ -271,13 +344,13 @@ export default function MenuPage() {
 
             <div className="flex justify-end gap-2">
               <button
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded"
+                className="px-4 py-2 bg-gray-200 rounded"
                 onClick={() => setShowRecipeModal(false)}
               >
                 Batal
               </button>
               <button
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded"
+                className="px-4 py-2 bg-blue-600 text-white rounded"
                 onClick={handleSaveRecipe}
               >
                 Simpan Resep
