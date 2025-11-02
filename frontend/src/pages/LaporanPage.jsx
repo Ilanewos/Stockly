@@ -157,8 +157,7 @@ export default function LaporanPage() {
                 <thead>
                   <tr className="bg-gray-200 text-center">
                     <th className="border px-4 py-2">Nama Bahan</th>
-                    <th className="border px-4 py-2">Stok Awal</th>
-                    <th className="border px-4 py-2">Stok Saat Ini</th>
+                    <th className="border px-4 py-2">Stok</th>
                     <th className="border px-4 py-2">Min. Stok</th>
                     <th className="border px-4 py-2">Status</th>
                   </tr>
