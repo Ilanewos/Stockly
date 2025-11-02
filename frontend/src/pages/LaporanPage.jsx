@@ -166,7 +166,6 @@ export default function LaporanPage() {
                   {laporanTampil.stok_bahan.map((b) => (
                     <tr key={b.id_bahan || b.id} className="text-center">
                       <td className="border px-4 py-2">{b.nama_bahan || b.nama}</td>
-                      <td className="border px-4 py-2">{b.stok_awal ?? b.stok}</td>
                       <td className="border px-4 py-2">{b.stok}</td>
                       <td className="border px-4 py-2">{b.min_stok}</td>
                       <td
