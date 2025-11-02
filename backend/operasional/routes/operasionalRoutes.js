@@ -17,5 +17,6 @@ router.get('/report', controller.getReport);
 
 // kondisi stok bahan
 router.get('/stok-bahan', controller.getStokBahan);
+router.post('/orders', controller.createOrder)
 
 module.exports = router;

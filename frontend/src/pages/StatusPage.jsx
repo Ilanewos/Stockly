@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { RefreshCcw } from "lucide-react";
+import { api } from "../api"; // pastikan api.js sudah benar seperti sebelumnya
 
-// Komponen dropdown custom
+// 🔹 Komponen dropdown status
 function DropdownStatus({ value, onChange }) {
   const [open, setOpen] = useState(false);
 
@@ -47,106 +49,85 @@ function DropdownStatus({ value, onChange }) {
 
 export default function StatusPage() {
   const [transaksi, setTransaksi] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Ambil transaksi dari localStorage
-  useEffect(() => {
-    const savedTransaksi = JSON.parse(localStorage.getItem("transaksi")) || [];
-    setTransaksi(savedTransaksi);
-  }, []);
+  // 🔹 Ambil data dari backend
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await api.getOrders(); // GET /operasional/orders
+      if (res?.success) {
+        const mapped = res.data.map((t) => ({
+          id: t.id_transaksi,
+          date: t.waktu,
+         status:
+  t.status_pesanan === "proses" || t.status_pesanan === "pending"
+    ? "Process"
+    : t.status_pesanan === "done"
+    ? "Done"
+    : "Cancel",
 
-  // Sinkronisasi dengan laporan_hari_ini
-  useEffect(() => {
-    const checkTutupHari = () => {
-      const laporan = JSON.parse(localStorage.getItem("laporan_hari_ini"));
-      if (!laporan || laporan.transaksi.length === 0) {
-        setTransaksi([]);
-        localStorage.removeItem("transaksi");
-      }
-    };
-
-    checkTutupHari();
-
-    const handleStorageChange = (e) => {
-      if (e.key === "laporan_hari_ini") checkTutupHari();
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  // Ubah status pesanan
-  const ubahStatus = (id, statusBaru) => {
-    setTransaksi((prev) => {
-      let updated = prev.map((t) => (t.id === id ? { ...t, status: statusBaru } : t));
-      const target = updated.find((t) => t.id === id);
-      if (!target) return updated;
-
-      if (statusBaru === "Done") {
-        const laporan = JSON.parse(localStorage.getItem("laporan_hari_ini")) || {
-          tanggal: new Date().toLocaleDateString("id-ID"),
-          total_transaksi: 0,
-          total_penjualan: 0,
-          rata_rata_transaksi: 0,
-          transaksi: [],
-          stok_bahan: JSON.parse(localStorage.getItem("bahan")) || [],
-        };
-
-        const recipes = JSON.parse(localStorage.getItem("resep")) || [];
-        const bahanList = laporan.stok_bahan;
-
-        target.items.forEach((item) => {
-          const resepMenu = recipes.filter((r) => r.id_menu === item.menuId);
-          resepMenu.forEach((r) => {
-            const bahanIdx = bahanList.findIndex((b) => b.id_bahan === r.id_bahan);
-            if (bahanIdx > -1) {
-              bahanList[bahanIdx].stok -= r.jumlah * item.quantity;
-              if (bahanList[bahanIdx].stok < 0) bahanList[bahanIdx].stok = 0;
-            }
-          });
-        });
-
-        const transaksiBaru = target.items.map((item) => ({
-          id: item.menuId,
-          menu_nama: item.name,
-          qty: item.quantity,
-          total: item.subtotal,
-          waktu_transaksi: new Date(target.date).toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          note: t.catatan || "",
+          nama_menu: t.nama_menu,
+          total_jumlah: t.total_jumlah,
+          harga: t.harga,
+          total_harga: t.total_harga,
         }));
-
-        const allTransaksi = [...laporan.transaksi, ...transaksiBaru];
-        laporan.transaksi = allTransaksi;
-        laporan.total_transaksi = allTransaksi.length;
-        laporan.total_penjualan = allTransaksi.reduce((sum, t) => sum + t.total, 0);
-        laporan.rata_rata_transaksi = laporan.total_transaksi
-          ? laporan.total_penjualan / laporan.total_transaksi
-          : 0;
-        laporan.stok_bahan = bahanList;
-
-        localStorage.setItem("laporan_hari_ini", JSON.stringify(laporan));
-        localStorage.setItem("bahan", JSON.stringify(bahanList));
+        setTransaksi(mapped);
       }
-
-      localStorage.setItem("transaksi", JSON.stringify(updated));
-      return updated;
-    });
+    } catch (err) {
+      console.error("Gagal ambil data:", err);
+    }
+    setLoading(false);
   };
 
-  // Hitung jumlah per status
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // 🔹 Ubah status pesanan di backend
+  const ubahStatus = async (id, statusBaru) => {
+    try {
+      if (statusBaru === "Process") {
+        await api.processOrder(id); // POST /operasional/orders/:id/process
+      } else if (statusBaru === "Done") {
+        await api.finishOrder(id); // POST /operasional/orders/:id/done
+      } else if (statusBaru === "Cancel") {
+        await api.updateOrderStatus(id, "cancel"); // POST /operasional/orders/:id/cancel
+      }
+
+      // Update tampilan
+      setTransaksi((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, status: statusBaru } : t
+        )
+      );
+    } catch (err) {
+      console.error("Gagal ubah status:", err);
+    }
+  };
+
+  // 🔹 Hitung jumlah per status
   const count = (status) => transaksi.filter((t) => t.status === status).length;
 
-  // 🔹 Filter hanya transaksi yang belum selesai atau batal
+  // 🔹 Filter pesanan aktif (Process)
   const transaksiAktif = transaksi.filter((t) => t.status === "Process");
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <h1 className="text-2xl md:text-3xl font-bold text-center md:text-left">
-        Status Pesanan
-      </h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl md:text-3xl font-bold">Status Pesanan</h1>
+        <button
+          onClick={fetchOrders}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
+        >
+          <RefreshCcw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          {loading ? "Memuat..." : "Refresh"}
+        </button>
+      </div>
 
-      {/* Ringkasan status */}
+      {/* 🔹 Ringkasan status */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         <div className="bg-yellow-100 text-yellow-800 p-2 rounded text-center font-medium">
           Process: {count("Process")}
@@ -159,60 +140,53 @@ export default function StatusPage() {
         </div>
       </div>
 
-      {/* Daftar hanya yang status Process */}
+      {/* 🔹 Daftar transaksi */}
       {transaksiAktif.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {transaksiAktif
-            .slice()
-            .reverse()
-            .map((t) => (
-              <div
-                key={t.id}
-                className="border rounded-lg p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <div className="text-sm text-gray-500">
-                      {t.date
-                        ? new Date(t.date).toLocaleTimeString("id-ID", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "Invalid Date"}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Meja {t.tableNumber || "-"}
-                    </div>
+          {transaksiAktif.map((t) => (
+            <div
+              key={t.id}
+              className="border rounded-lg p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="text-sm text-gray-500">
+                    {t.date
+                      ? new Date(t.date).toLocaleTimeString("id-ID", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "-"}
                   </div>
-
-                  {/* Custom dropdown status */}
-                  <DropdownStatus
-                    value={t.status}
-                    onChange={(statusBaru) => ubahStatus(t.id, statusBaru)}
-                  />
                 </div>
 
-                <div className="space-y-1">
-                  {t.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between">
-                      <span>{item.name}</span>
-                      <span>
-                        {item.quantity} x Rp {item.price.toLocaleString("id-ID")} = Rp{" "}
-                        {item.subtotal.toLocaleString("id-ID")}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <DropdownStatus
+                  value={t.status}
+                  onChange={(statusBaru) => ubahStatus(t.id, statusBaru)}
+                />
+              </div>
 
-                {t.note && (
-                  <p className="text-sm italic text-gray-600 mt-2">Catatan: {t.note}</p>
-                )}
-
-                <div className="text-right font-semibold pt-2 border-t">
-                  Total: Rp {t.total.toLocaleString("id-ID")}
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span>{t.nama_menu}</span>
+                  <span>
+                    {t.total_jumlah} × Rp {t.harga.toLocaleString("id-ID")} = Rp{" "}
+                    {t.total_harga.toLocaleString("id-ID")}
+                  </span>
                 </div>
               </div>
-            ))}
+
+              {t.note && (
+                <p className="text-sm italic text-gray-600 mt-2">
+                  Catatan: {t.note}
+                </p>
+              )}
+
+              <div className="text-right font-semibold pt-2 border-t">
+                Total: Rp {t.total_harga.toLocaleString("id-ID")}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <p className="text-gray-500 text-center py-6">

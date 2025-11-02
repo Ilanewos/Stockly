@@ -2,6 +2,58 @@
 const db = require('../db');
 
 /**
+ * POST /operasional/orders
+ * Tambah order baru ke tabel transaksi
+ */
+exports.createOrder = async (req, res) => {
+  try {
+    const { id_menu, total_jumlah, catatan, status_pesanan } = req.body;
+
+    if (!id_menu || !total_jumlah) {
+      return res.status(400).json({
+        success: false,
+        message: "id_menu dan total_jumlah wajib diisi"
+      });
+    }
+
+    const conn = await db.getConnection();
+
+    // 🔹 Ambil harga menu dari tabel menu
+    const [menu] = await conn.execute(`SELECT harga FROM menu WHERE id_menu = ?`, [id_menu]);
+    if (menu.length === 0) {
+      conn.release();
+      return res.status(404).json({
+        success: false,
+        message: "Menu tidak ditemukan"
+      });
+    }
+
+    const total_harga = menu[0].harga * total_jumlah;
+
+    // 🔹 Simpan ke tabel transaksi (dengan catatan dan status_pesanan)
+    await conn.execute(
+      `INSERT INTO transaksi (id_menu, total_jumlah, total_harga, status_pesanan, waktu, catatan)
+       VALUES (?, ?, ?, ?, NOW(), ?)`,
+      [id_menu, total_jumlah, total_harga, status_pesanan || 'pending', catatan || null]
+    );
+
+    conn.release();
+    return res.json({
+      success: true,
+      message: "Order berhasil dibuat"
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
+    });
+  }
+};
+
+
+/**
  * GET /operasional/orders?status=pending
  * default: semua
  */
@@ -37,11 +89,12 @@ exports.processOrder = async (req, res) => {
     const conn = await db.getConnection();
     const [r] = await conn.execute(`UPDATE transaksi SET status_pesanan = 'processing' WHERE id_transaksi = ?`, [id]);
     conn.release();
-    if (r.affectedRows === 0) return res.status(404).json({ success:false, message: 'Order not found' });
+    if (r.affectedRows === 0)
+      return res.status(404).json({ success: false, message: 'Order not found' });
     return res.json({ success: true, message: 'Order set to processing' });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ success:false, message: 'Server error', error: err.message });
+    return res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
@@ -53,8 +106,9 @@ exports.processOrder = async (req, res) => {
  */
 exports.finishOrder = async (req, res) => {
   const id = req.params.id;
+  let conn;
   try {
-    const conn = await db.getConnection();
+    conn = await db.getConnection();
     await conn.beginTransaction();
 
     // ambil transaksi
@@ -62,13 +116,13 @@ exports.finishOrder = async (req, res) => {
     if (txRows.length === 0) {
       await conn.rollback();
       conn.release();
-      return res.status(404).json({ success:false, message: 'Order not found' });
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
     const tx = txRows[0];
     if (tx.status_pesanan === 'done') {
       await conn.rollback();
       conn.release();
-      return res.status(400).json({ success:false, message: 'Order already done' });
+      return res.status(400).json({ success: false, message: 'Order already done' });
     }
 
     // dapatkan resep untuk menu
@@ -80,14 +134,14 @@ exports.finishOrder = async (req, res) => {
       [tx.id_menu]
     );
 
-    // cek ketersediaan (optional)
+    // cek ketersediaan bahan
     for (const r of resepRows) {
       const needed = (r.jumlah_bahan || 0) * tx.total_jumlah;
       if (r.stok < needed) {
         await conn.rollback();
         conn.release();
         return res.status(400).json({
-          success:false,
+          success: false,
           message: `Stok bahan id=${r.id_bahan} tidak cukup. Dibutuhkan ${needed}, tersedia ${r.stok}`
         });
       }
@@ -107,14 +161,18 @@ exports.finishOrder = async (req, res) => {
     return res.json({ success: true, message: 'Order finished, bahan dikurangi, status set to done' });
   } catch (err) {
     console.error(err);
-    try { if (conn) { await conn.rollback(); conn.release(); } } catch(e){}
-    return res.status(500).json({ success:false, message: 'Server error', error: err.message });
+    try {
+      if (conn) {
+        await conn.rollback();
+        conn.release();
+      }
+    } catch (e) {}
+    return res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
 /**
  * GET /operasional/report?from=2025-10-01&to=2025-10-31
- * default: semua
  * hasil: total transaksi done, total pendapatan, list ringkas
  */
 exports.getReport = async (req, res) => {
@@ -150,10 +208,10 @@ exports.getReport = async (req, res) => {
     );
 
     conn.release();
-    return res.json({ success:true, summary: summaryRows[0], list: listRows });
+    return res.json({ success: true, summary: summaryRows[0], list: listRows });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ success:false, message: 'Server error', error: err.message });
+    return res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
@@ -177,6 +235,10 @@ exports.getStokBahan = async (req, res) => {
     return res.json({ success: true, data: rows });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ success: false, message: 'Gagal mengambil data stok bahan', error: err.message });
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data stok bahan',
+      error: err.message
+    });
   }
 };

@@ -1,51 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Plus, Minus, Trash2, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../api";
 
 export default function TransaksiPage() {
   const navigate = useNavigate();
 
-  // 🔹 fallback menu
-  const initialMenu = [
-    { id_menu: 1, nama_menu: "Nasi Goreng", harga: 15000 },
-    { id_menu: 2, nama_menu: "Mie Goreng", harga: 12000 },
-    { id_menu: 3, nama_menu: "Es Teh Manis", harga: 5000 },
-  ];
+  // 🔹 Ambil menu dari backend
+  const [menus, setMenus] = useState([]);
 
-  // 🔹 ambil menu dari localStorage MenuPage jika ada
-  const [menus, setMenus] = useState(() => {
-    const savedMenus = JSON.parse(localStorage.getItem("menus"));
-    if (savedMenus && savedMenus.length > 0) {
-      return savedMenus.map((m) => ({
-        id: m.id_menu,
-        name: m.nama_menu,
-        price: m.harga,
-        isActive: true,
-      }));
-    }
-    return initialMenu.map((m) => ({
-      id: m.id_menu,
-      name: m.nama_menu,
-      price: m.harga,
-      isActive: true,
-    }));
-  });
-
-  // 🔹 update menu otomatis saat localStorage berubah
   useEffect(() => {
-    const handleStorage = () => {
-      const savedMenus = JSON.parse(localStorage.getItem("menus")) || [];
-      setMenus(
-        savedMenus.map((m) => ({
+    const fetchMenu = async () => {
+      try {
+        const response = await api.getMenu();
+        const fetched = response.map((m) => ({
           id: m.id_menu,
           name: m.nama_menu,
           price: m.harga,
           isActive: true,
-        }))
-      );
+        }));
+        setMenus(fetched);
+        localStorage.setItem("menus", JSON.stringify(response));
+      } catch (err) {
+        console.error("⚠️ Gagal memuat menu:", err.message);
+      }
     };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    fetchMenu();
   }, []);
 
   const [transaksi, setTransaksi] = useState([]);
@@ -58,36 +38,7 @@ export default function TransaksiPage() {
   const getMenuById = (id) => menus.find((m) => m.id === Number(id));
   const activeMenus = menus.filter((m) => m.isActive);
 
-  // 🔹 Komponen gambar menu
-  const MenuImage = ({ name }) => {
-    const imageMap = {
-      "Nasi Goreng":
-        "https://images.pexels.com/photos/9980760/pexels-photo-9980760.jpeg",
-      "Mie Goreng":
-        "https://images.pexels.com/photos/30506288/pexels-photo-30506288.jpeg",
-      "Es Teh Manis":
-        "https://images.pexels.com/photos/32403262/pexels-photo-32403262.jpeg",
-    };
-
-    const imgSrc =
-      imageMap[name.trim()] ||
-      "https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&h=300";
-
-    return (
-      <div className="w-full h-32 overflow-hidden rounded-md bg-gray-100">
-        <img
-          src={imgSrc}
-          alt={name}
-          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-          onError={(e) => {
-            e.target.src =
-              "https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&h=300";
-          }}
-        />
-      </div>
-    );
-  };
-
+  // 🔹 Tambah ke keranjang
   const addToCart = (menuId) => {
     const exist = cart.find((c) => c.menuId === menuId);
     if (exist) {
@@ -111,7 +62,7 @@ export default function TransaksiPage() {
     }, 0);
 
   // 🔹 Proses transaksi
-  const processTransaction = () => {
+  const processTransaction = async () => {
     if (cart.length === 0) return alert("Keranjang kosong!");
 
     const newTrans = {
@@ -138,38 +89,43 @@ export default function TransaksiPage() {
 
     newTrans.total = newTrans.items.reduce((s, i) => s + i.subtotal, 0);
 
+    // Simpan ke localStorage
     const savedTrans = JSON.parse(localStorage.getItem("transaksi")) || [];
     const updatedTrans = [...savedTrans, newTrans];
     localStorage.setItem("transaksi", JSON.stringify(updatedTrans));
 
-    const laporan = JSON.parse(localStorage.getItem("laporan_hari_ini")) || null;
-    if (laporan && laporan.tanggal === new Date().toLocaleDateString("id-ID")) {
-      laporan.transaksi = [...(laporan.transaksi || []), newTrans];
-      laporan.total_transaksi = laporan.transaksi.length;
-      laporan.total_penjualan = laporan.transaksi.reduce(
-        (sum, t) => sum + t.total,
-        0
-      );
-      laporan.rata_rata_transaksi =
-        laporan.total_transaksi > 0
-          ? laporan.total_penjualan / laporan.total_transaksi
-          : 0;
-      localStorage.setItem("laporan_hari_ini", JSON.stringify(laporan));
+    // Kirim ke backend operasional
+    try {
+      const response = await api.createOrder({
+        id_menu: cart[0]?.menuId,
+        total_jumlah: cart[0]?.quantity,
+        total_harga: newTrans.total,
+        catatan: newTransaksi.note || "",
+        status_pesanan: "pending",
+      });
+      console.log("✅ Transaksi dikirim ke backend:", response);
+    } catch (err) {
+      console.error("⚠️ Gagal kirim transaksi ke backend:", err.message);
     }
 
-    setTransaksi(updatedTrans);
+    setTransaksi((prev) => [...prev, newTrans]);
     setCart([]);
     setNewTransaksi({ tableNumber: "", note: "" });
-
     alert("✅ Transaksi berhasil disimpan!");
   };
 
-  const totalPendapatan = transaksi.reduce((s, t) => s + (t.total || 0), 0);
-  const totalTransaksi = transaksi.length;
-  const rataRataTransaksi =
-    totalTransaksi > 0 ? totalPendapatan / totalTransaksi : 0;
+  // 🔹 Statistik responsif
+  const totalPendapatan = useMemo(
+    () => transaksi.reduce((sum, t) => sum + (t.total || 0), 0),
+    [transaksi]
+  );
 
-  // 🔹 useEffect untuk reset transaksi harian
+  const totalTransaksi = useMemo(() => transaksi.length, [transaksi]);
+
+  const rataRataTransaksi = useMemo(() => {
+    return totalTransaksi > 0 ? totalPendapatan / totalTransaksi : 0;
+  }, [totalPendapatan, totalTransaksi]);
+
   useEffect(() => {
     const laporan = JSON.parse(localStorage.getItem("laporan_hari_ini")) || null;
     if (!laporan || laporan.tanggal !== new Date().toLocaleDateString("id-ID")) {
@@ -189,32 +145,27 @@ export default function TransaksiPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-lg shadow">
           <p className="text-sm font-medium">Total Transaksi</p>
-          <h2 className="text-2xl font-bold">
-             {totalTransaksi.toLocaleString("id-ID")}
-          </h2>
+          <h2 className="text-2xl font-bold">{totalTransaksi.toLocaleString("id-ID")}</h2>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <p className="text-sm font-medium">Pendapatan</p>
-          <h2 className="text-2xl font-bold">
-            Rp {totalPendapatan.toLocaleString("id-ID")}
-          </h2>
+          <h2 className="text-2xl font-bold">Rp {totalPendapatan.toLocaleString("id-ID")}</h2>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
           <p className="text-sm font-medium">Rata-rata Transaksi</p>
-          <h2 className="text-2xl font-bold">
-            Rp {Math.round(rataRataTransaksi).toLocaleString("id-ID")}
-          </h2>
+          <h2 className="text-2xl font-bold">Rp {Math.round(rataRataTransaksi).toLocaleString("id-ID")}</h2>
         </div>
       </div>
 
+      {/* Shortcut */}
       <button
         onClick={() => navigate("/status")}
-        className="mt-4 bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-900"
+        className="mt-4 bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-900 transition-colors"
       >
         Lihat Status Pesanan
       </button>
 
-      {/* Layout utama */}
+      {/* Layout Menu & Keranjang */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Menu */}
         <div className="bg-white p-4 rounded-lg shadow space-y-3">
@@ -224,10 +175,9 @@ export default function TransaksiPage() {
               <button
                 key={menu.id}
                 onClick={() => addToCart(menu.id)}
-                className="border rounded-lg overflow-hidden hover:shadow-md transition bg-white"
+                className="border rounded-lg overflow-hidden hover:shadow-md transition bg-white p-2"
               >
-                <MenuImage name={menu.name} />
-                <div className="p-2 text-center">
+                <div className="text-center">
                   <p className="font-medium text-gray-800">{menu.name}</p>
                   <p className="text-sm text-gray-600">
                     Rp {menu.price.toLocaleString("id-ID")}
@@ -268,9 +218,7 @@ export default function TransaksiPage() {
           </div>
 
           {cart.length === 0 ? (
-            <p className="text-gray-500 text-center py-6">
-              Belum ada pesanan.
-            </p>
+            <p className="text-gray-500 text-center py-6">Belum ada pesanan.</p>
           ) : (
             <div className="space-y-2">
               {cart.map((item) => {
@@ -280,7 +228,6 @@ export default function TransaksiPage() {
                     key={item.menuId}
                     className="flex justify-between items-center border p-2 rounded"
                   >
-                    {/* Nama menu */}
                     <div>
                       <p className="font-medium">{menu?.name}</p>
                       <p className="text-sm text-gray-600">
@@ -288,7 +235,6 @@ export default function TransaksiPage() {
                       </p>
                     </div>
 
-                    {/* Kontrol jumlah */}
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
@@ -309,9 +255,7 @@ export default function TransaksiPage() {
                         <Minus className="w-4 h-4" />
                       </button>
 
-                      <span className="min-w-[24px] text-center font-medium">
-                        {item.quantity}
-                      </span>
+                      <span className="min-w-[24px] text-center font-medium">{item.quantity}</span>
 
                       <button
                         onClick={() =>
