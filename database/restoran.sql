@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Waktu pembuatan: 03 Nov 2025 pada 13.49
+-- Waktu pembuatan: 03 Nov 2025 pada 17.02
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.2.12
 
@@ -34,54 +34,55 @@ CREATE TABLE `bahan` (
   `satuan` varchar(50) NOT NULL,
   `harga` int(11) NOT NULL DEFAULT 0,
   `status` enum('normal','menipis','habis') DEFAULT 'normal',
-  `minim_stok` int(11) NOT NULL DEFAULT 0
+  `minim_stok` int(11) NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data untuk tabel `bahan`
 --
 
-INSERT INTO `bahan` (`id_bahan`, `nama_bahan`, `stok`, `satuan`, `harga`, `status`, `minim_stok`) VALUES
-(1, 'Nasi Premium', 5460, 'gram', 12000, 'menipis', 2000),
-(2, 'Telur ayam', 45, 'butir', 2500, 'normal', 30),
-(3, 'Daging ayam', 2000, 'gram', 40000, 'normal', 200),
-(4, 'Bawang putih', 50, 'siung', 1000, 'normal', 10),
-(5, 'Kecap manis', 25, 'sdm', 500, 'normal', 5),
-(6, 'Saus tiram', 20, 'sdm', 600, 'normal', 5),
-(7, 'Garam', 50, 'sdt', 200, 'normal', 10),
-(8, 'Merica bubuk', 30, 'sdt', 300, 'normal', 10),
-(9, 'Minyak goreng', 25, 'sdm', 400, 'normal', 10),
-(10, 'Daun bawang', 20, 'batang', 1000, 'normal', 5),
-(11, 'Bawang goreng', 20, 'sdm', 1500, 'normal', 5),
-(12, 'Air', 300, 'ml', 1, 'normal', 100),
-(13, 'Serai', 100, 'batang', 500, 'normal', 5),
-(14, 'Daun salam', 100, 'lembar', 300, 'normal', 5),
-(15, 'Bawang merah', 80, 'siung', 800, 'normal', 10),
-(16, 'Kunyit', 50, 'cm', 400, 'normal', 5),
-(17, 'Jahe', 50, 'cm', 400, 'normal', 5),
-(18, 'Soun', 200, 'gram', 1500, 'normal', 20),
-(19, 'Tauge', 200, 'gram', 800, 'normal', 20),
-(20, 'Jeruk nipis', 50, 'buah', 1000, 'normal', 5),
-(21, 'Daun seledri', 50, 'batang', 700, 'normal', 5),
-(22, 'Mie telur', 3000, 'gram', 2500, 'normal', 200),
-(23, 'Kol', 1000, 'gram', 1500, 'normal', 100),
-(24, 'Sawi hijau', 800, 'gram', 1200, 'normal', 100),
-(25, 'Dada ayam', 1500, 'gram', 45000, 'normal', 200),
-(26, 'Madu', 30, 'sdm', 1000, 'normal', 5),
-(27, 'Margarin', 30, 'sdm', 800, 'normal', 5),
-(28, 'Wortel', 1000, 'gram', 1000, 'normal', 50),
-(29, 'Brokoli', 1000, 'gram', 2000, 'normal', 50),
-(30, 'Bakso sapi', 100, 'butir', 1500, 'normal', 10),
-(31, 'Teh celup', 49, 'kantong', 300, 'normal', 10),
-(32, 'Gula pasir', 498, 'sdm', 100, 'normal', 20),
-(33, 'Es batu', 292, 'kotak', 50, 'normal', 20),
-(34, 'Daging alpukat', 300, 'gram', 5000, 'normal', 10),
-(35, 'Susu kental manis', 50, 'sdm', 800, 'normal', 10),
-(36, 'Bubuk kopi', 200, 'sdm', 400, 'normal', 10),
-(37, 'Susu cair', 500, 'ml', 200, 'normal', 50),
-(38, 'Gula', 26, 'sd', 400, 'normal', 20),
-(43, 'cabai', 100, 'kg', 50000, 'normal', 50),
-(44, 'daging sapi', 10, 'kg', 10000, 'normal', 5);
+INSERT INTO `bahan` (`id_bahan`, `nama_bahan`, `stok`, `satuan`, `harga`, `status`, `minim_stok`, `deleted_at`) VALUES
+(1, 'Nasi Premium', 5450, 'gram', 12000, 'menipis', 2000, NULL),
+(2, 'Telur ayam', 45, 'butir', 2500, 'normal', 30, NULL),
+(3, 'Daging ayam', 2000, 'gram', 40000, 'normal', 200, NULL),
+(4, 'Bawang putih', 50, 'siung', 1000, 'normal', 10, NULL),
+(5, 'Kecap manis', 25, 'sdm', 500, 'normal', 5, NULL),
+(6, 'Saus tiram', 20, 'sdm', 600, 'normal', 5, NULL),
+(7, 'Garam', 50, 'sdt', 200, 'normal', 10, NULL),
+(8, 'Merica bubuk', 30, 'sdt', 300, 'normal', 10, NULL),
+(9, 'Minyak goreng', 25, 'sdm', 400, 'normal', 10, NULL),
+(10, 'Daun bawang', 20, 'batang', 1000, 'normal', 5, NULL),
+(11, 'Bawang goreng', 20, 'sdm', 1500, 'normal', 5, NULL),
+(12, 'Air', 100, 'ml', 1, 'normal', 100, NULL),
+(13, 'Serai', 100, 'batang', 500, 'normal', 5, NULL),
+(14, 'Daun salam', 100, 'lembar', 300, 'normal', 5, NULL),
+(15, 'Bawang merah', 80, 'siung', 800, 'normal', 10, NULL),
+(16, 'Kunyit', 50, 'cm', 400, 'normal', 5, NULL),
+(17, 'Jahe', 50, 'cm', 400, 'normal', 5, NULL),
+(18, 'Soun', 200, 'gram', 1500, 'normal', 20, NULL),
+(19, 'Tauge', 200, 'gram', 800, 'normal', 20, NULL),
+(20, 'Jeruk nipis', 50, 'buah', 1000, 'normal', 5, NULL),
+(21, 'Daun seledri', 50, 'batang', 700, 'normal', 5, NULL),
+(22, 'Mie telur', 3000, 'gram', 2500, 'normal', 200, NULL),
+(23, 'Kol', 1000, 'gram', 1500, 'normal', 100, NULL),
+(24, 'Sawi hijau', 800, 'gram', 1200, 'normal', 100, NULL),
+(25, 'Dada ayam', 1500, 'gram', 45000, 'normal', 200, NULL),
+(26, 'Madu', 30, 'sdm', 1000, 'normal', 5, NULL),
+(27, 'Margarin', 30, 'sdm', 800, 'normal', 5, NULL),
+(28, 'Wortel', 1000, 'gram', 1000, 'normal', 50, NULL),
+(29, 'Brokoli', 1000, 'gram', 2000, 'normal', 50, NULL),
+(30, 'Bakso sapi', 100, 'butir', 1500, 'normal', 10, NULL),
+(31, 'Teh celup', 48, 'kantong', 300, 'normal', 10, NULL),
+(32, 'Gula pasir', 496, 'sdm', 100, 'normal', 20, NULL),
+(33, 'Es batu', 284, 'kotak', 50, 'normal', 20, NULL),
+(34, 'Daging alpukat', 300, 'gram', 5000, 'normal', 10, NULL),
+(35, 'Susu kental manis', 50, 'sdm', 800, 'normal', 10, NULL),
+(36, 'Bubuk kopi', 200, 'sdm', 400, 'normal', 10, NULL),
+(37, 'Susu ', 500, 'ml', 200, 'normal', 50, NULL),
+(38, 'Gula', 26, 'sd', 400, 'normal', 20, '2025-11-03 23:55:54'),
+(43, 'cabai', 100, 'kg', 50000, 'normal', 50, '2025-11-03 23:55:13'),
+(45, 'bluberi', 12, 'buah', 8000, 'normal', 3, '2025-11-03 23:57:55');
 
 -- --------------------------------------------------------
 
@@ -250,52 +251,54 @@ CREATE TABLE `restok` (
   `id_restok` int(11) NOT NULL,
   `jumlah_tambah` int(11) NOT NULL,
   `tanggal_restok` datetime DEFAULT current_timestamp(),
-  `id_bahan` int(11) DEFAULT NULL
+  `id_bahan` int(11) DEFAULT NULL,
+  `deleted_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data untuk tabel `restok`
 --
 
-INSERT INTO `restok` (`id_restok`, `jumlah_tambah`, `tanggal_restok`, `id_bahan`) VALUES
-(1, 5000, '2025-11-02 10:59:22', 1),
-(2, 20, '2025-11-02 11:07:13', 2),
-(3, 2000, '2025-10-28 00:40:01', 3),
-(4, 50, '2025-10-28 00:40:01', 4),
-(5, 4, '2025-11-02 04:44:10', 5),
-(6, 20, '2025-10-28 00:40:01', 6),
-(7, 50, '2025-10-28 00:40:01', 7),
-(8, 30, '2025-10-28 00:40:01', 8),
-(9, 50, '2025-10-28 00:40:01', 9),
-(10, 20, '2025-10-28 00:40:01', 10),
-(11, 20, '2025-10-28 00:40:01', 11),
-(12, 100, '2025-10-28 00:40:01', 13),
-(13, 100, '2025-10-28 00:40:01', 14),
-(14, 80, '2025-10-28 00:40:01', 15),
-(15, 50, '2025-10-28 00:40:01', 16),
-(16, 50, '2025-10-28 00:40:01', 17),
-(17, 200, '2025-10-28 00:40:01', 18),
-(18, 200, '2025-10-28 00:40:01', 19),
-(19, 50, '2025-10-28 00:40:01', 20),
-(20, 50, '2025-10-28 00:40:01', 21),
-(21, 3000, '2025-10-28 00:40:01', 22),
-(22, 1000, '2025-10-28 00:40:01', 23),
-(23, 800, '2025-10-28 00:40:01', 24),
-(24, 1500, '2025-10-28 00:40:01', 25),
-(25, 30, '2025-10-28 00:40:01', 26),
-(26, 30, '2025-10-28 00:40:01', 27),
-(27, 1000, '2025-10-28 00:40:01', 28),
-(28, 1000, '2025-10-28 00:40:01', 29),
-(29, 100, '2025-10-28 00:40:01', 30),
-(30, 50, '2025-10-28 00:40:01', 31),
-(31, 500, '2025-10-28 00:40:01', 32),
-(32, 300, '2025-10-28 00:40:01', 33),
-(33, 300, '2025-10-28 00:40:01', 34),
-(34, 50, '2025-10-28 00:40:01', 35),
-(35, 200, '2025-10-28 00:40:01', 36),
-(36, 500, '2025-10-28 00:40:01', 37),
-(37, 50, '2025-10-28 00:40:01', 38),
-(38, 500, '2025-11-02 11:06:59', 12);
+INSERT INTO `restok` (`id_restok`, `jumlah_tambah`, `tanggal_restok`, `id_bahan`, `deleted_at`) VALUES
+(1, 5000, '2025-11-02 10:59:22', 1, NULL),
+(2, 20, '2025-11-02 11:07:13', 2, NULL),
+(3, 2000, '2025-10-28 00:40:01', 3, NULL),
+(4, 50, '2025-10-28 00:40:01', 4, NULL),
+(5, 4, '2025-11-02 04:44:10', 5, NULL),
+(6, 20, '2025-10-28 00:40:01', 6, NULL),
+(7, 50, '2025-10-28 00:40:01', 7, NULL),
+(8, 30, '2025-10-28 00:40:01', 8, NULL),
+(9, 50, '2025-10-28 00:40:01', 9, NULL),
+(10, 20, '2025-10-28 00:40:01', 10, NULL),
+(11, 20, '2025-10-28 00:40:01', 11, NULL),
+(12, 100, '2025-10-28 00:40:01', 13, NULL),
+(13, 100, '2025-10-28 00:40:01', 14, NULL),
+(14, 80, '2025-10-28 00:40:01', 15, NULL),
+(15, 50, '2025-10-28 00:40:01', 16, NULL),
+(16, 50, '2025-10-28 00:40:01', 17, NULL),
+(17, 200, '2025-10-28 00:40:01', 18, NULL),
+(18, 200, '2025-10-28 00:40:01', 19, NULL),
+(19, 50, '2025-10-28 00:40:01', 20, NULL),
+(20, 50, '2025-10-28 00:40:01', 21, NULL),
+(21, 3000, '2025-10-28 00:40:01', 22, NULL),
+(22, 1000, '2025-10-28 00:40:01', 23, NULL),
+(23, 800, '2025-10-28 00:40:01', 24, NULL),
+(24, 1500, '2025-10-28 00:40:01', 25, NULL),
+(25, 30, '2025-10-28 00:40:01', 26, NULL),
+(26, 30, '2025-10-28 00:40:01', 27, NULL),
+(27, 1000, '2025-10-28 00:40:01', 28, NULL),
+(28, 1000, '2025-10-28 00:40:01', 29, NULL),
+(29, 100, '2025-10-28 00:40:01', 30, NULL),
+(30, 50, '2025-10-28 00:40:01', 31, NULL),
+(31, 500, '2025-10-28 00:40:01', 32, NULL),
+(32, 300, '2025-10-28 00:40:01', 33, NULL),
+(33, 300, '2025-10-28 00:40:01', 34, NULL),
+(34, 50, '2025-10-28 00:40:01', 35, NULL),
+(35, 200, '2025-10-28 00:40:01', 36, NULL),
+(36, 500, '2025-10-28 00:40:01', 37, NULL),
+(37, 50, '2025-10-28 00:40:01', 38, NULL),
+(38, 500, '2025-11-02 11:06:59', 12, NULL),
+(39, 2, '2025-11-03 23:57:40', 45, NULL);
 
 -- --------------------------------------------------------
 
@@ -335,7 +338,9 @@ INSERT INTO `transaksi` (`id_transaksi`, `id_menu`, `total_jumlah`, `total_harga
 (26, 14, 1, 10000, 0, '2025-11-02 20:05:06', NULL, 'done'),
 (27, 14, 2, 20000, 0, '2025-11-02 20:24:03', 'ms vm', 'done'),
 (28, 13, 1, 3323, 0, '2025-11-02 20:25:10', NULL, 'done'),
-(29, 13, 1, 3323, 0, '2025-11-02 20:28:09', 'cnab', 'done');
+(29, 13, 1, 3323, 0, '2025-11-02 20:28:09', 'cnab', 'done'),
+(30, 13, 1, 3323, 0, '2025-11-03 21:40:57', 'apaass', 'done'),
+(31, 6, 1, 5000, 444, '2025-11-03 21:46:12', 'apas', 'done');
 
 --
 -- Indexes for dumped tables
@@ -383,7 +388,7 @@ ALTER TABLE `transaksi`
 -- AUTO_INCREMENT untuk tabel `bahan`
 --
 ALTER TABLE `bahan`
-  MODIFY `id_bahan` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `id_bahan` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT untuk tabel `menu`
@@ -401,13 +406,13 @@ ALTER TABLE `resep`
 -- AUTO_INCREMENT untuk tabel `restok`
 --
 ALTER TABLE `restok`
-  MODIFY `id_restok` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id_restok` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT untuk tabel `transaksi`
 --
 ALTER TABLE `transaksi`
-  MODIFY `id_transaksi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `id_transaksi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)
