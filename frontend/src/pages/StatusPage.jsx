@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { RefreshCcw } from "lucide-react";
 import { api } from "../api"; // pastikan api.js sudah benar seperti sebelumnya
 
 // 🔹 Komponen dropdown status
@@ -60,13 +59,12 @@ export default function StatusPage() {
         const mapped = res.data.map((t) => ({
           id: t.id_transaksi,
           date: t.waktu,
-         status:
-  t.status_pesanan === "proses" || t.status_pesanan === "pending"
-    ? "Process"
-    : t.status_pesanan === "done"
-    ? "Done"
-    : "Cancel",
-
+          status:
+            t.status_pesanan === "proses" || t.status_pesanan === "pending"
+              ? "Process"
+              : t.status_pesanan === "done"
+              ? "Done"
+              : "Cancel",
           note: t.catatan || "",
           nama_menu: t.nama_menu,
           total_jumlah: t.total_jumlah,
@@ -86,26 +84,33 @@ export default function StatusPage() {
   }, []);
 
   // 🔹 Ubah status pesanan di backend
-  const ubahStatus = async (id, statusBaru) => {
-    try {
-      if (statusBaru === "Process") {
-        await api.processOrder(id); // POST /operasional/orders/:id/process
-      } else if (statusBaru === "Done") {
-        await api.finishOrder(id); // POST /operasional/orders/:id/done
-      } else if (statusBaru === "Cancel") {
-        await api.updateOrderStatus(id, "cancel"); // POST /operasional/orders/:id/cancel
-      }
+ // 🔹 Ubah status pesanan di backend
+const ubahStatus = async (id, statusBaru) => {
+  try {
+    if (statusBaru === "Process") {
+      await api.processOrder(id);
+    } else if (statusBaru === "Done") {
+      await api.finishOrder(id);
+    } else if (statusBaru === "Cancel") {
+      // 🟢 Hapus langsung dari database lewat backend
+      await api.cancelOrder(id);
 
-      // Update tampilan
-      setTransaksi((prev) =>
-        prev.map((t) =>
-          t.id === id ? { ...t, status: statusBaru } : t
-        )
-      );
-    } catch (err) {
-      console.error("Gagal ubah status:", err);
+      // Hapus dari tampilan juga
+      setTransaksi((prev) => prev.filter((t) => t.id !== id));
+      return;
     }
-  };
+
+    // Update tampilan untuk Process / Done
+    setTransaksi((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, status: statusBaru } : t
+      )
+    );
+  } catch (err) {
+    console.error("Gagal ubah status:", err);
+  }
+};
+
 
   // 🔹 Hitung jumlah per status
   const count = (status) => transaksi.filter((t) => t.status === status).length;
@@ -117,14 +122,6 @@ export default function StatusPage() {
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl md:text-3xl font-bold">Status Pesanan</h1>
-        <button
-          onClick={fetchOrders}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
-        >
-          <RefreshCcw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          {loading ? "Memuat..." : "Refresh"}
-        </button>
       </div>
 
       {/* 🔹 Ringkasan status */}

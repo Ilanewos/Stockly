@@ -49,6 +49,32 @@ exports.createOrder = async (req, res) => {
   }
 };
 
+/**
+ * DELETE /operasional/orders/:id/cancel
+ * Hapus pesanan dari database
+ */
+exports.cancelOrder = async (req, res) => {
+  const id = req.params.id;
+  try {
+    const conn = await db.getConnection();
+    const [r] = await conn.execute(`DELETE FROM transaksi WHERE id_transaksi = ?`, [id]);
+    conn.release();
+
+    if (r.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    return res.json({ success: true, message: "Order berhasil dihapus (cancel)" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message,
+    });
+  }
+};
+
 
 
 /**

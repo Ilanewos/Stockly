@@ -21,13 +21,22 @@ exports.getBahanById = async (req, res) => {
   }
 };
 
+// 🟢 Fungsi bantu untuk menentukan status otomatis
+function hitungStatus(stok, minim_stok) {
+  if (stok <= 0) return "habis";
+  if (stok <= minim_stok) return "menipis";
+  return "normal";
+}
+
 // ✅ POST tambah bahan baru
 exports.createBahan = async (req, res) => {
   try {
     const { nama_bahan, stok, satuan, harga, minim_stok } = req.body;
+    const status = hitungStatus(stok || 0, minim_stok || 0);
+
     const [result] = await db.query(
-      'INSERT INTO bahan (nama_bahan, stok, satuan, harga, minim_stok) VALUES (?, ?, ?, ?, ?)',
-      [nama_bahan, stok || 0, satuan, harga || 0, minim_stok || 0]
+      'INSERT INTO bahan (nama_bahan, stok, satuan, harga, status, minim_stok) VALUES (?, ?, ?, ?, ?, ?)',
+      [nama_bahan, stok || 0, satuan, harga || 0, status, minim_stok || 0]
     );
     res.status(201).json({ message: 'Bahan berhasil ditambahkan', id: result.insertId });
   } catch (err) {
@@ -35,18 +44,23 @@ exports.createBahan = async (req, res) => {
   }
 };
 
-// ✅ PUT update bahan
+// ✅ PUT update bahan (otomatis update status)
 exports.updateBahan = async (req, res) => {
   try {
-    const { nama_bahan, stok, satuan, harga, status, minim_stok } = req.body;
+    const { nama_bahan, stok, satuan, harga, minim_stok } = req.body;
+    const status = hitungStatus(stok, minim_stok);
+
     const [result] = await db.query(
       `UPDATE bahan 
        SET nama_bahan = ?, stok = ?, satuan = ?, harga = ?, status = ?, minim_stok = ?
        WHERE id_bahan = ? AND deleted_at IS NULL`,
       [nama_bahan, stok, satuan, harga, status, minim_stok, req.params.id]
     );
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Bahan tidak ditemukan atau sudah dihapus' });
-    res.json({ message: 'Bahan berhasil diupdate' });
+
+    if (result.affectedRows === 0)
+      return res.status(404).json({ message: 'Bahan tidak ditemukan atau sudah dihapus' });
+
+    res.json({ message: 'Bahan berhasil diupdate', status });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -59,7 +73,8 @@ exports.deleteBahan = async (req, res) => {
       'UPDATE bahan SET deleted_at = NOW() WHERE id_bahan = ? AND deleted_at IS NULL',
       [req.params.id]
     );
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Bahan tidak ditemukan atau sudah dihapus' });
+    if (result.affectedRows === 0)
+      return res.status(404).json({ message: 'Bahan tidak ditemukan atau sudah dihapus' });
     res.json({ message: 'Bahan berhasil dihapus (soft delete)' });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -188,6 +188,17 @@ export const api = {
     }
   },
 
+  cancelOrder: async (id) => {
+  try {
+    const res = await axios.delete(`${API_BASE_3000}/orders/${id}/cancel`);
+    return res.data;
+  } catch (err) {
+    console.error("Error cancelOrder:", err);
+    return null;
+  }
+},
+
+
   getStokBahan: async () => {
     try {
       const res = await axios.get(`${API_BASE_3000}/stok-bahan`);

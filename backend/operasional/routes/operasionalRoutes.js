@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/operasionalController');
+const operasionacllController = require('../controllers/operasionalController');
 
 // ambil semua pesanan pending / processing / done (opsional query status)
 router.get('/orders', controller.getOrders);
@@ -11,6 +12,8 @@ router.post('/orders/:id/process', controller.processOrder);
 
 // selesai pesanan: ubah status ke 'done', kurangi stok bahan berdasarkan resep
 router.post('/orders/:id/done', controller.finishOrder);
+
+router.delete('/orders/:id/cancel', operasionacllController.cancelOrder);
 
 // laporan penjualan (opsional filter tanggal: from,to -> YYYY-MM-DD)
 router.get('/report', controller.getReport);
