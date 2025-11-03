@@ -96,13 +96,15 @@ export default function TransaksiPage() {
 
     // Kirim ke backend operasional
     try {
-      const response = await api.createOrder({
-        id_menu: cart[0]?.menuId,
-        total_jumlah: cart[0]?.quantity,
-        total_harga: newTrans.total,
-        catatan: newTransaksi.note || "",
-        status_pesanan: "pending",
-      });
+    const response = await api.createOrder({
+  id_menu: cart[0]?.menuId,
+  total_jumlah: cart[0]?.quantity,
+  total_harga: newTrans.total,
+  catatan: newTransaksi.note || "",
+  status_pesanan: "pending",
+  nomor_meja: newTransaksi.tableNumber || "-", // ✅ tambahkan ini
+});
+
       console.log("✅ Transaksi dikirim ke backend:", response);
     } catch (err) {
       console.error("⚠️ Gagal kirim transaksi ke backend:", err.message);

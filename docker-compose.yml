@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # =========================
+  # MySQL Database
+  # =========================
+  db:
+    image: mysql:8.0
+    container_name: stockly-db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # =========================
+  # Backend - Operasional
+  # =========================
+  operational:
+    build: ./backend/operasional
+    container_name: stockly-operasional
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${OPERATIONAL_PORT}:3000"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+    command: ["/bin/sh", "-c", "echo '⏳ Menunggu DB siap...' && sleep 15 && npm start"]
+
+  # =========================
+  # Backend - Inventory
+  # =========================
+  inventory:
+    build: ./backend/inventory
+    container_name: stockly-inventory
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${INVENTORY_PORT}:5000"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+    command: ["/bin/sh", "-c", "echo '⏳ Menunggu DB siap...' && sleep 15 && npm start"]
+
+  # =========================
+  # Backend - Product
+  # =========================
+  product:
+    build: ./backend/product
+    container_name: stockly-product
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PRODUCT_PORT}:4000"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+    command: ["/bin/sh", "-c", "echo '⏳ Menunggu DB siap...' && sleep 15 && npm start"]
+
+  # =========================
+  # Frontend (React + Vite)
+  # =========================
+  frontend:
+    build: ./frontend
+    container_name: stockly-frontend
+    restart: always
+    depends_on:
+      - operational
+      - inventory
+      - product
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    env_file:
+      - .env
+    environment:
+      VITE_API_OPERATIONAL: http://operational:3000
+      VITE_API_INVENTORY: http://inventory:5000
+      VITE_API_PRODUCT: http://product:4000
+    command: ["/bin/sh", "-c", "echo '🕐 Menunggu backend siap...' && sleep 10 && npm run dev -- --host"]
+
+  # =========================
+  # PhpMyAdmin (optional)
+  # =========================
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: stockly-phpmyadmin
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8020:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+
+volumes:
+  db_data:

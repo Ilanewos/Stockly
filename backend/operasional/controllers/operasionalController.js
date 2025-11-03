@@ -7,7 +7,7 @@ const db = require('../db');
  */
 exports.createOrder = async (req, res) => {
   try {
-    const { id_menu, total_jumlah, catatan, status_pesanan } = req.body;
+    const { id_menu, total_jumlah, catatan, status_pesanan, nomor_meja } = req.body;
 
     if (!id_menu || !total_jumlah) {
       return res.status(400).json({
@@ -18,23 +18,20 @@ exports.createOrder = async (req, res) => {
 
     const conn = await db.getConnection();
 
-    // 🔹 Ambil harga menu dari tabel menu
+    // Ambil harga menu
     const [menu] = await conn.execute(`SELECT harga FROM menu WHERE id_menu = ?`, [id_menu]);
     if (menu.length === 0) {
       conn.release();
-      return res.status(404).json({
-        success: false,
-        message: "Menu tidak ditemukan"
-      });
+      return res.status(404).json({ success: false, message: "Menu tidak ditemukan" });
     }
 
     const total_harga = menu[0].harga * total_jumlah;
 
-    // 🔹 Simpan ke tabel transaksi (dengan catatan dan status_pesanan)
+    // 🔹 Simpan ke tabel transaksi (tambahkan nomor_meja)
     await conn.execute(
-      `INSERT INTO transaksi (id_menu, total_jumlah, total_harga, status_pesanan, waktu, catatan)
-       VALUES (?, ?, ?, ?, NOW(), ?)`,
-      [id_menu, total_jumlah, total_harga, status_pesanan || 'pending', catatan || null]
+      `INSERT INTO transaksi (id_menu, total_jumlah, total_harga, status_pesanan, waktu, catatan, nomor_meja)
+       VALUES (?, ?, ?, ?, NOW(), ?, ?)`,
+      [id_menu, total_jumlah, total_harga, status_pesanan || 'pending', catatan || null, nomor_meja || null]
     );
 
     conn.release();
@@ -51,6 +48,7 @@ exports.createOrder = async (req, res) => {
     });
   }
 };
+
 
 
 /**

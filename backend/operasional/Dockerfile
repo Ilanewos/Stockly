@@ -1,5 +1,5 @@
 # 1. Gunakan Node.js official image
-FROM node:18
+FROM node:20-alpine
 
 # 2. Tentukan working directory di container
 WORKDIR /usr/src/app

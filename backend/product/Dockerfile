@@ -1,5 +1,5 @@
 # Gunakan image Node versi stabil
-FROM node:18
+FROM node:20-alpine
 
 # Tentukan working directory di container
 WORKDIR /app
@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Set environment default
-ENV PORT=4000
+# ENV PORT=4000
 
 # Buka port 4000 untuk akses backend
 EXPOSE 4000
