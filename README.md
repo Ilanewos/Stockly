@@ -6,7 +6,7 @@ Sirilan Faustina Ewos (42230029),
 
 Ni Wayan Ariningsih (42230060),
 
-Denilson,
+Denilson Redentor Antonio Dos Santos Freitas(42230020),
 
 
 Tema Aplikasi :
