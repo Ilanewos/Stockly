@@ -1,8 +1,13 @@
 Nama Kelompok :
-Komang Indira Tri Jayanti (42230062)
-Sirilan Faustina Ewos 
-Ni Wayan Ariningsih (42230060)
-Denilson
+
+Komang Indira Tri Jayanti (42230062),
+
+Sirilan Faustina Ewos (42230029), 
+
+Ni Wayan Ariningsih (42230060),
+
+Denilson,
+
 
 Tema Aplikasi :
 Inventory Restauran
