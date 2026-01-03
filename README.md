@@ -17,3 +17,5 @@ Dengan catatan menu yang di pesan, misalnya pesan menu soto ayam, apa saja bahan
 
 Intruksi untuk menjalankan project :
 Docker compose up —build
+
+To deploy to Kubernetes: kubectl apply -f k8s/stockly-full.yaml
