@@ -1,4 +1,25 @@
-# 1. DATABASE SERVICE (MySQL)
+# --- 1. CONFIGMAP (Konfigurasi Umum) ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stockly-config
+data:
+  DB_HOST: "db-service"
+  DB_USER: "root"
+
+---
+# --- 2. SECRET (Password Database) ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: stockly-secret
+type: Opaque
+data:
+  # Password: admin123
+  DB_PASSWORD: YWRtaW4xMjM=
+
+---
+# --- 3. DATABASE (MySQL) ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,7 +40,10 @@ spec:
         image: mysql:8.0
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value: "12345678" 
+          valueFrom:
+            secretKeyRef:
+              name: stockly-secret
+              key: DB_PASSWORD
 ---
 apiVersion: v1
 kind: Service
@@ -33,13 +57,13 @@ spec:
     - port: 3306
 
 ---
-# 2. BACKEND: INVENTORY
+# --- 4. BACKEND: INVENTORY ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: inventory-app
 spec:
-  replicas: 1
+  replicas: 2 
   selector:
     matchLabels:
       app: stockly
@@ -56,7 +80,15 @@ spec:
         imagePullPolicy: Never
         env:
         - name: DB_HOST
-          value: "db-service"
+          valueFrom:
+            configMapKeyRef:
+              name: stockly-config
+              key: DB_HOST
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: stockly-secret
+              key: DB_PASSWORD
 ---
 apiVersion: v1
 kind: Service
@@ -67,53 +99,16 @@ spec:
     app: stockly
     component: inventory
   ports:
-    - port: 5000 
+    - port: 5001
 
 ---
-# 3. BACKEND: OPERASIONAL
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: operasional-app
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: stockly
-      component: operasional
-  template:
-    metadata:
-      labels:
-        app: stockly
-        component: operasional
-    spec:
-      containers:
-      - name: operasional
-        image: stockly-operasional:v1
-        imagePullPolicy: Never
-        env:
-        - name: DB_HOST
-          value: "db-service"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: operasional-service
-spec:
-  selector:
-    app: stockly
-    component: operasional
-  ports:
-    - port: 3000 
-
----
-# 4. BACKEND: PRODUCT
+# --- 5. BACKEND: PRODUCT ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: product-app
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: stockly
@@ -130,7 +125,15 @@ spec:
         imagePullPolicy: Never
         env:
         - name: DB_HOST
-          value: "db-service"
+          valueFrom:
+            configMapKeyRef:
+              name: stockly-config
+              key: DB_HOST
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: stockly-secret
+              key: DB_PASSWORD
 ---
 apiVersion: v1
 kind: Service
@@ -141,10 +144,55 @@ spec:
     app: stockly
     component: product
   ports:
-    - port: 4000 
+    - port: 5002
 
 ---
-# 5. FRONTEND (Pintu Masuk Utama)
+# --- 6. BACKEND: OPERASIONAL ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operasional-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stockly
+      component: operasional
+  template:
+    metadata:
+      labels:
+        app: stockly
+        component: operasional
+    spec:
+      containers:
+      - name: operasional
+        image: stockly-operasional:v1
+        imagePullPolicy: Never
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: stockly-config
+              key: DB_HOST
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: stockly-secret
+              key: DB_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: operasional-service
+spec:
+  selector:
+    app: stockly
+    component: operasional
+  ports:
+    - port: 5003
+
+---
+# --- 7. FRONTEND ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -166,18 +214,18 @@ spec:
         image: stockly-frontend:v1
         imagePullPolicy: Never
         ports:
-        - containerPort: 5173 # Port aplikasi React/Vue/Next 
+        - containerPort: 5173
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend-service
 spec:
-  type: NodePort # Agar bisa dibuka di browser localhost
+  type: NodePort 
   selector:
     app: stockly
     component: frontend
   ports:
     - port: 80
       targetPort: 5173
-      nodePort: 30001 # Buka http://localhost:30001 di browser
+      nodePort: 30005
