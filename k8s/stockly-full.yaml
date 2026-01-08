@@ -101,14 +101,12 @@ spec:
     - port: 5001
 ---
 # --- 5. BACKEND: PRODUCT ---
-# Deployment untuk service backend Product
-# Menjalankan aplikasi product dengan 2 replica agar lebih scalable
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: product-app
 spec:
-  replicas: 2 # Jumlah pod yang dijalankan untuk backend product
+  replicas: 2 
   selector:
     matchLabels:
       app: stockly
@@ -121,24 +119,20 @@ spec:
     spec:
       containers:
       - name: product
-        image: stockly-product:v1 # Image backend product
-        imagePullPolicy: Never # Image diambil dari local (bukan registry)
+        image: stockly-product:v1 
+        imagePullPolicy: Never 
         env:
-        # Host database diambil dari ConfigMap
         - name: DB_HOST
           valueFrom:
             configMapKeyRef:
               name: stockly-config
               key: DB_HOST
-                # Password database diambil dari Secret
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: stockly-secret
               key: DB_PASSWORD
 ---
-# Service untuk mengekspos backend Product
-# Digunakan agar backend lain atau frontend bisa mengakses product service
 apiVersion: v1
 kind: Service
 metadata:
@@ -148,8 +142,7 @@ spec:
     app: stockly
     component: product
   ports:
-    - port: 5002 # Port service untuk backend product
-
+    - port: 5002 
 ---
 # --- 6. BACKEND: OPERASIONAL ---
 apiVersion: apps/v1
