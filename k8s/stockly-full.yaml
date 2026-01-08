@@ -55,7 +55,7 @@ spec:
     component: database
   ports:
     - port: 3306
-
+---
 # --- 4. BACKEND: INVENTORY ---
 apiVersion: apps/v1
 kind: Deployment
@@ -99,7 +99,8 @@ spec:
     component: inventory
   ports:
     - port: 5001
-    # --- 5. BACKEND: PRODUCT ---
+---
+# --- 5. BACKEND: PRODUCT ---
 # Deployment untuk service backend Product
 # Menjalankan aplikasi product dengan 2 replica agar lebih scalable
 apiVersion: apps/v1
