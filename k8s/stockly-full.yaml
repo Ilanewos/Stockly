@@ -150,3 +150,46 @@ spec:
     - port: 5002 # Port service untuk backend product
 
 ---
+# --- 6. BACKEND: OPERASIONAL ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operasional-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stockly
+      component: operasional
+  template:
+    metadata:
+      labels:
+        app: stockly
+        component: operasional
+    spec:
+      containers:
+      - name: operasional
+        image: stockly-operasional:v1
+        imagePullPolicy: Never
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: stockly-config
+              key: DB_HOST
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: stockly-secret
+              key: DB_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: operasional-service
+spec:
+  selector:
+    app: stockly
+    component: operasional
+  ports:
+    - port: 5003
